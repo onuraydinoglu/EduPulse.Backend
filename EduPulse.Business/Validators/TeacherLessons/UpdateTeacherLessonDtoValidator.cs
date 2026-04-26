@@ -3,10 +3,13 @@ using FluentValidation;
 
 namespace EduPulse.Business.Validators.TeacherLessons;
 
-public class CreateTeacherLessonDtoValidator : AbstractValidator<CreateTeacherLessonDto>
+public class UpdateTeacherLessonDtoValidator : AbstractValidator<UpdateTeacherLessonDto>
 {
-    public CreateTeacherLessonDtoValidator()
+    public UpdateTeacherLessonDtoValidator()
     {
+        RuleFor(x => x.Id)
+            .NotEmpty().WithMessage("Kayıt Id boş olamaz.");
+
         RuleFor(x => x.SchoolId)
             .NotEmpty().WithMessage("Okul seçilmelidir.");
 

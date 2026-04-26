@@ -2,6 +2,7 @@
 using EduPulse.DTOs.Lessons;
 using EduPulse.Entities.Lessons;
 using EduPulse.Repository.Abstracts;
+using FluentValidation;
 
 namespace EduPulse.Business.Concretes;
 
@@ -9,13 +10,19 @@ public class LessonService : ILessonService
 {
     private readonly ILessonRepository _lessonRepository;
     private readonly ISchoolRepository _schoolRepository;
+    private readonly IValidator<CreateLessonDto> _createValidator;
+    private readonly IValidator<UpdateLessonDto> _updateValidator;
 
     public LessonService(
         ILessonRepository lessonRepository,
-        ISchoolRepository schoolRepository)
+        ISchoolRepository schoolRepository,
+        IValidator<CreateLessonDto> createValidator,
+        IValidator<UpdateLessonDto> updateValidator)
     {
         _lessonRepository = lessonRepository;
         _schoolRepository = schoolRepository;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
     public async Task<List<LessonListDto>> GetAllAsync()
@@ -62,10 +69,15 @@ public class LessonService : ILessonService
 
     public async Task CreateAsync(CreateLessonDto dto)
     {
+        var validationResult = await _createValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
 
         if (school is null)
-            throw new Exception("Okul bulunamadı.");
+            throw new ArgumentException("Okul bulunamadı.");
 
         var lesson = new Lesson
         {
@@ -79,15 +91,20 @@ public class LessonService : ILessonService
 
     public async Task UpdateAsync(UpdateLessonDto dto)
     {
+        var validationResult = await _updateValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var lesson = await _lessonRepository.GetByIdAsync(dto.Id);
 
         if (lesson is null)
-            throw new Exception("Ders bulunamadı.");
+            throw new ArgumentException("Ders bulunamadı.");
 
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
 
         if (school is null)
-            throw new Exception("Okul bulunamadı.");
+            throw new ArgumentException("Okul bulunamadı.");
 
         lesson.SchoolId = dto.SchoolId;
         lesson.Name = dto.Name;
@@ -101,7 +118,7 @@ public class LessonService : ILessonService
         var lesson = await _lessonRepository.GetByIdAsync(id);
 
         if (lesson is null)
-            throw new Exception("Ders bulunamadı.");
+            throw new ArgumentException("Ders bulunamadı.");
 
         await _lessonRepository.DeleteAsync(id);
     }

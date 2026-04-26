@@ -2,6 +2,7 @@
 using EduPulse.DTOs.StudentGrades;
 using EduPulse.Entities.StudentGrades;
 using EduPulse.Repository.Abstracts;
+using FluentValidation;
 
 namespace EduPulse.Business.Concretes;
 
@@ -11,17 +12,23 @@ public class StudentGradeService : IStudentGradeService
     private readonly IStudentRepository _studentRepository;
     private readonly ILessonRepository _lessonRepository;
     private readonly ISchoolRepository _schoolRepository;
+    private readonly IValidator<CreateStudentGradeDto> _createValidator;
+    private readonly IValidator<UpdateStudentGradeDto> _updateValidator;
 
     public StudentGradeService(
         IStudentGradeRepository repository,
         IStudentRepository studentRepository,
         ILessonRepository lessonRepository,
-        ISchoolRepository schoolRepository)
+        ISchoolRepository schoolRepository,
+        IValidator<CreateStudentGradeDto> createValidator,
+        IValidator<UpdateStudentGradeDto> updateValidator)
     {
         _repository = repository;
         _studentRepository = studentRepository;
         _lessonRepository = lessonRepository;
         _schoolRepository = schoolRepository;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
     public async Task<List<StudentGradeListDto>> GetAllAsync()
@@ -30,24 +37,30 @@ public class StudentGradeService : IStudentGradeService
         var students = await _studentRepository.GetAllAsync();
         var lessons = await _lessonRepository.GetAllAsync();
 
-        return list.Select(x => new StudentGradeListDto
+        return list.Select(x =>
         {
-            Id = x.Id,
-            SchoolId = x.SchoolId,
-            StudentId = x.StudentId,
-            StudentName = students.FirstOrDefault(s => s.Id == x.StudentId) != null
-                ? $"{students.First(s => s.Id == x.StudentId).FirstName} {students.First(s => s.Id == x.StudentId).LastName}"
-                : "",
-            LessonId = x.LessonId,
-            LessonName = lessons.FirstOrDefault(l => l.Id == x.LessonId)?.Name ?? "",
-            Exam1 = x.Exam1,
-            Exam2 = x.Exam2,
-            Project = x.Project,
-            Activity1 = x.Activity1,
-            Activity2 = x.Activity2,
-            Activity3 = x.Activity3,
-            Average = x.Average,
-            IsActive = x.IsActive
+            var student = students.FirstOrDefault(s => s.Id == x.StudentId);
+            var lesson = lessons.FirstOrDefault(l => l.Id == x.LessonId);
+
+            return new StudentGradeListDto
+            {
+                Id = x.Id,
+                SchoolId = x.SchoolId,
+                StudentId = x.StudentId,
+                StudentName = student != null
+                    ? $"{student.FirstName} {student.LastName}"
+                    : "",
+                LessonId = x.LessonId,
+                LessonName = lesson?.Name ?? "",
+                Exam1 = x.Exam1,
+                Exam2 = x.Exam2,
+                Project = x.Project,
+                Activity1 = x.Activity1,
+                Activity2 = x.Activity2,
+                Activity3 = x.Activity3,
+                Average = x.Average,
+                IsActive = x.IsActive
+            };
         }).ToList();
     }
 
@@ -57,22 +70,29 @@ public class StudentGradeService : IStudentGradeService
         var lessons = await _lessonRepository.GetAllAsync();
         var student = await _studentRepository.GetByIdAsync(studentId);
 
-        return list.Select(x => new StudentGradeListDto
+        return list.Select(x =>
         {
-            Id = x.Id,
-            SchoolId = x.SchoolId,
-            StudentId = x.StudentId,
-            StudentName = student != null ? $"{student.FirstName} {student.LastName}" : "",
-            LessonId = x.LessonId,
-            LessonName = lessons.FirstOrDefault(l => l.Id == x.LessonId)?.Name ?? "",
-            Exam1 = x.Exam1,
-            Exam2 = x.Exam2,
-            Project = x.Project,
-            Activity1 = x.Activity1,
-            Activity2 = x.Activity2,
-            Activity3 = x.Activity3,
-            Average = x.Average,
-            IsActive = x.IsActive
+            var lesson = lessons.FirstOrDefault(l => l.Id == x.LessonId);
+
+            return new StudentGradeListDto
+            {
+                Id = x.Id,
+                SchoolId = x.SchoolId,
+                StudentId = x.StudentId,
+                StudentName = student != null
+                    ? $"{student.FirstName} {student.LastName}"
+                    : "",
+                LessonId = x.LessonId,
+                LessonName = lesson?.Name ?? "",
+                Exam1 = x.Exam1,
+                Exam2 = x.Exam2,
+                Project = x.Project,
+                Activity1 = x.Activity1,
+                Activity2 = x.Activity2,
+                Activity3 = x.Activity3,
+                Average = x.Average,
+                IsActive = x.IsActive
+            };
         }).ToList();
     }
 
@@ -82,43 +102,69 @@ public class StudentGradeService : IStudentGradeService
         var students = await _studentRepository.GetAllAsync();
         var lesson = await _lessonRepository.GetByIdAsync(lessonId);
 
-        return list.Select(x => new StudentGradeListDto
+        return list.Select(x =>
         {
-            Id = x.Id,
-            SchoolId = x.SchoolId,
-            StudentId = x.StudentId,
-            StudentName = students.FirstOrDefault(s => s.Id == x.StudentId) != null
-                ? $"{students.First(s => s.Id == x.StudentId).FirstName} {students.First(s => s.Id == x.StudentId).LastName}"
-                : "",
-            LessonId = x.LessonId,
-            LessonName = lesson?.Name ?? "",
-            Exam1 = x.Exam1,
-            Exam2 = x.Exam2,
-            Project = x.Project,
-            Activity1 = x.Activity1,
-            Activity2 = x.Activity2,
-            Activity3 = x.Activity3,
-            Average = x.Average,
-            IsActive = x.IsActive
+            var student = students.FirstOrDefault(s => s.Id == x.StudentId);
+
+            return new StudentGradeListDto
+            {
+                Id = x.Id,
+                SchoolId = x.SchoolId,
+                StudentId = x.StudentId,
+                StudentName = student != null
+                    ? $"{student.FirstName} {student.LastName}"
+                    : "",
+                LessonId = x.LessonId,
+                LessonName = lesson?.Name ?? "",
+                Exam1 = x.Exam1,
+                Exam2 = x.Exam2,
+                Project = x.Project,
+                Activity1 = x.Activity1,
+                Activity2 = x.Activity2,
+                Activity3 = x.Activity3,
+                Average = x.Average,
+                IsActive = x.IsActive
+            };
         }).ToList();
     }
 
     public async Task CreateAsync(CreateStudentGradeDto dto)
     {
+        var validationResult = await _createValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
-        if (school is null) throw new Exception("Okul bulunamadı.");
+        if (school is null)
+            throw new ArgumentException("Okul bulunamadı.");
 
         var student = await _studentRepository.GetByIdAsync(dto.StudentId);
-        if (student is null) throw new Exception("Öğrenci bulunamadı.");
+        if (student is null)
+            throw new ArgumentException("Öğrenci bulunamadı.");
 
         var lesson = await _lessonRepository.GetByIdAsync(dto.LessonId);
-        if (lesson is null) throw new Exception("Ders bulunamadı.");
+        if (lesson is null)
+            throw new ArgumentException("Ders bulunamadı.");
+
+        if (student.SchoolId != dto.SchoolId)
+            throw new ArgumentException("Seçilen öğrenci bu okula ait değil.");
+
+        if (lesson.SchoolId != dto.SchoolId)
+            throw new ArgumentException("Seçilen ders bu okula ait değil.");
 
         var existing = await _repository.GetByStudentAndLessonAsync(dto.StudentId, dto.LessonId);
         if (existing != null)
-            throw new Exception("Bu öğrenci için bu derste zaten not girilmiş.");
+            throw new ArgumentException("Bu öğrenci için bu derste zaten not girilmiş.");
 
-        var average = CalculateAverage(dto);
+        var average = CalculateAverage(
+            dto.Exam1,
+            dto.Exam2,
+            dto.Project,
+            dto.Activity1,
+            dto.Activity2,
+            dto.Activity3
+        );
 
         var entity = new StudentGrade
         {
@@ -140,10 +186,23 @@ public class StudentGradeService : IStudentGradeService
 
     public async Task UpdateAsync(UpdateStudentGradeDto dto)
     {
-        var entity = await _repository.GetByIdAsync(dto.Id);
-        if (entity is null) throw new Exception("Not bulunamadı.");
+        var validationResult = await _updateValidator.ValidateAsync(dto);
 
-        var average = CalculateAverage(dto);
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
+        var entity = await _repository.GetByIdAsync(dto.Id);
+        if (entity is null)
+            throw new ArgumentException("Not bulunamadı.");
+
+        var average = CalculateAverage(
+            dto.Exam1,
+            dto.Exam2,
+            dto.Project,
+            dto.Activity1,
+            dto.Activity2,
+            dto.Activity3
+        );
 
         entity.Exam1 = dto.Exam1;
         entity.Exam2 = dto.Exam2;
@@ -159,19 +218,23 @@ public class StudentGradeService : IStudentGradeService
 
     public async Task DeleteAsync(string id)
     {
+        var entity = await _repository.GetByIdAsync(id);
+
+        if (entity is null)
+            throw new ArgumentException("Not bulunamadı.");
+
         await _repository.DeleteAsync(id);
     }
 
-    // 🔥 EN ÖNEMLİ KISIM
-    private double CalculateAverage(dynamic dto)
+    private double CalculateAverage(
+        double exam1,
+        double exam2,
+        double project,
+        double activity1,
+        double activity2,
+        double activity3)
     {
-        var total =
-            dto.Exam1 +
-            dto.Exam2 +
-            dto.Project +
-            dto.Activity1 +
-            dto.Activity2 +
-            dto.Activity3;
+        var total = exam1 + exam2 + project + activity1 + activity2 + activity3;
 
         return total / 6.0;
     }

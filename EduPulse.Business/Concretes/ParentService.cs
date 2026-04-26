@@ -2,6 +2,7 @@
 using EduPulse.DTOs.Parents;
 using EduPulse.Entities.Parents;
 using EduPulse.Repository.Abstracts;
+using FluentValidation;
 
 namespace EduPulse.Business.Concretes;
 
@@ -9,13 +10,19 @@ public class ParentService : IParentService
 {
     private readonly IParentRepository _parentRepository;
     private readonly ISchoolRepository _schoolRepository;
+    private readonly IValidator<CreateParentDto> _createValidator;
+    private readonly IValidator<UpdateParentDto> _updateValidator;
 
     public ParentService(
         IParentRepository parentRepository,
-        ISchoolRepository schoolRepository)
+        ISchoolRepository schoolRepository,
+        IValidator<CreateParentDto> createValidator,
+        IValidator<UpdateParentDto> updateValidator)
     {
         _parentRepository = parentRepository;
         _schoolRepository = schoolRepository;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
     public async Task<List<ParentListDto>> GetAllAsync()
@@ -68,9 +75,15 @@ public class ParentService : IParentService
 
     public async Task CreateAsync(CreateParentDto dto)
     {
+        var validationResult = await _createValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
+
         if (school is null)
-            throw new Exception("Okul bulunamadı.");
+            throw new ArgumentException("Okul bulunamadı.");
 
         var parent = new Parent
         {
@@ -87,13 +100,20 @@ public class ParentService : IParentService
 
     public async Task UpdateAsync(UpdateParentDto dto)
     {
+        var validationResult = await _updateValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var parent = await _parentRepository.GetByIdAsync(dto.Id);
+
         if (parent is null)
-            throw new Exception("Veli bulunamadı.");
+            throw new ArgumentException("Veli bulunamadı.");
 
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
+
         if (school is null)
-            throw new Exception("Okul bulunamadı.");
+            throw new ArgumentException("Okul bulunamadı.");
 
         parent.FirstName = dto.FirstName;
         parent.LastName = dto.LastName;
@@ -110,7 +130,7 @@ public class ParentService : IParentService
         var parent = await _parentRepository.GetByIdAsync(id);
 
         if (parent is null)
-            throw new Exception("Veli bulunamadı.");
+            throw new ArgumentException("Veli bulunamadı.");
 
         await _parentRepository.DeleteAsync(id);
     }

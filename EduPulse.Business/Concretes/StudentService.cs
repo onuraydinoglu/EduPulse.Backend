@@ -2,11 +2,14 @@
 using EduPulse.DTOs.Students;
 using EduPulse.Entities.Students;
 using EduPulse.Repository.Abstracts;
+using FluentValidation;
 
 namespace EduPulse.Business.Concretes;
 
 public class StudentService : IStudentService
 {
+    private readonly IValidator<CreateStudentDto> _createValidator;
+    private readonly IValidator<UpdateStudentDto> _updateValidator;
     private readonly IStudentRepository _studentRepository;
     private readonly ISchoolRepository _schoolRepository;
     private readonly IClassroomRepository _classroomRepository;
@@ -14,11 +17,15 @@ public class StudentService : IStudentService
     public StudentService(
         IStudentRepository studentRepository,
         ISchoolRepository schoolRepository,
-        IClassroomRepository classroomRepository)
+        IClassroomRepository classroomRepository,
+        IValidator<CreateStudentDto> createValidator,
+        IValidator<UpdateStudentDto> updateValidator)
     {
         _studentRepository = studentRepository;
         _schoolRepository = schoolRepository;
         _classroomRepository = classroomRepository;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
     public async Task<List<StudentListDto>> GetAllAsync()
@@ -125,16 +132,21 @@ public class StudentService : IStudentService
 
     public async Task CreateAsync(CreateStudentDto dto)
     {
+        var validationResult = await _createValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
         if (school is null)
-            throw new Exception("Okul bulunamadı.");
+            throw new ArgumentException("Okul bulunamadı.");
 
         var classroom = await _classroomRepository.GetByIdAsync(dto.ClassroomId);
         if (classroom is null)
-            throw new Exception("Sınıf bulunamadı.");
+            throw new ArgumentException("Sınıf bulunamadı.");
 
         if (classroom.SchoolId != dto.SchoolId)
-            throw new Exception("Seçilen sınıf bu okula ait değil.");
+            throw new ArgumentException("Seçilen sınıf bu okula ait değil.");
 
         var student = new Student
         {
@@ -154,20 +166,25 @@ public class StudentService : IStudentService
 
     public async Task UpdateAsync(UpdateStudentDto dto)
     {
+        var validationResult = await _updateValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var student = await _studentRepository.GetByIdAsync(dto.Id);
         if (student is null)
-            throw new Exception("Öğrenci bulunamadı.");
+            throw new ArgumentException("Öğrenci bulunamadı.");
 
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
         if (school is null)
-            throw new Exception("Okul bulunamadı.");
+            throw new ArgumentException("Okul bulunamadı.");
 
         var classroom = await _classroomRepository.GetByIdAsync(dto.ClassroomId);
         if (classroom is null)
-            throw new Exception("Sınıf bulunamadı.");
+            throw new ArgumentException("Sınıf bulunamadı.");
 
         if (classroom.SchoolId != dto.SchoolId)
-            throw new Exception("Seçilen sınıf bu okula ait değil.");
+            throw new ArgumentException("Seçilen sınıf bu okula ait değil.");
 
         student.FirstName = dto.FirstName;
         student.LastName = dto.LastName;

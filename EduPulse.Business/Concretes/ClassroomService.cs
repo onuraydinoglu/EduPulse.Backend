@@ -2,6 +2,7 @@
 using EduPulse.DTOs.Classrooms;
 using EduPulse.Entities.Classrooms;
 using EduPulse.Repository.Abstracts;
+using FluentValidation;
 
 namespace EduPulse.Business.Concretes;
 
@@ -10,41 +11,44 @@ public class ClassroomService : IClassroomService
     private readonly IClassroomRepository _classroomRepository;
     private readonly ISchoolRepository _schoolRepository;
     private readonly ITeacherRepository _teacherRepository;
+    private readonly IValidator<CreateClassroomDto> _createValidator;
+    private readonly IValidator<UpdateClassroomDto> _updateValidator;
 
     public ClassroomService(
         IClassroomRepository classroomRepository,
         ISchoolRepository schoolRepository,
-        ITeacherRepository teacherRepository)
+        ITeacherRepository teacherRepository,
+        IValidator<CreateClassroomDto> createValidator,
+        IValidator<UpdateClassroomDto> updateValidator)
     {
         _classroomRepository = classroomRepository;
         _schoolRepository = schoolRepository;
         _teacherRepository = teacherRepository;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
 
     public async Task<List<ClassroomListDto>> GetAllAsync()
     {
         var classrooms = await _classroomRepository.GetAllAsync();
-
-        var teacherIds = classrooms
-            .Where(x => x.TeacherId != null)
-            .Select(x => x.TeacherId!)
-            .Distinct()
-            .ToList();
-
         var teachers = await _teacherRepository.GetAllAsync();
 
-        return classrooms.Select(x => new ClassroomListDto
+        return classrooms.Select(x =>
         {
-            Id = x.Id,
-            SchoolId = x.SchoolId,
-            Grade = x.Grade,
-            Section = x.Section,
-            TeacherId = x.TeacherId,
-            TeacherName = teachers
-                .FirstOrDefault(t => t.Id == x.TeacherId)?
-                .FirstName + " " +
-                teachers.FirstOrDefault(t => t.Id == x.TeacherId)?.LastName,
-            IsActive = x.IsActive
+            var teacher = teachers.FirstOrDefault(t => t.Id == x.TeacherId);
+
+            return new ClassroomListDto
+            {
+                Id = x.Id,
+                SchoolId = x.SchoolId,
+                Grade = x.Grade,
+                Section = x.Section,
+                TeacherId = x.TeacherId,
+                TeacherName = teacher != null
+                    ? $"{teacher.FirstName} {teacher.LastName}"
+                    : null,
+                IsActive = x.IsActive
+            };
         }).ToList();
     }
 
@@ -53,18 +57,22 @@ public class ClassroomService : IClassroomService
         var classrooms = await _classroomRepository.GetBySchoolIdAsync(schoolId);
         var teachers = await _teacherRepository.GetAllAsync();
 
-        return classrooms.Select(x => new ClassroomListDto
+        return classrooms.Select(x =>
         {
-            Id = x.Id,
-            SchoolId = x.SchoolId,
-            Grade = x.Grade,
-            Section = x.Section,
-            TeacherId = x.TeacherId,
-            TeacherName = teachers
-                .FirstOrDefault(t => t.Id == x.TeacherId)?
-                .FirstName + " " +
-                teachers.FirstOrDefault(t => t.Id == x.TeacherId)?.LastName,
-            IsActive = x.IsActive
+            var teacher = teachers.FirstOrDefault(t => t.Id == x.TeacherId);
+
+            return new ClassroomListDto
+            {
+                Id = x.Id,
+                SchoolId = x.SchoolId,
+                Grade = x.Grade,
+                Section = x.Section,
+                TeacherId = x.TeacherId,
+                TeacherName = teacher != null
+                    ? $"{teacher.FirstName} {teacher.LastName}"
+                    : null,
+                IsActive = x.IsActive
+            };
         }).ToList();
     }
 
@@ -95,15 +103,20 @@ public class ClassroomService : IClassroomService
 
     public async Task CreateAsync(CreateClassroomDto dto)
     {
+        var validationResult = await _createValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
         if (school is null)
-            throw new Exception("Okul bulunamadı.");
+            throw new ArgumentException("Okul bulunamadı.");
 
-        if (dto.TeacherId != null)
+        if (!string.IsNullOrWhiteSpace(dto.TeacherId))
         {
             var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
             if (teacher is null)
-                throw new Exception("Öğretmen bulunamadı.");
+                throw new ArgumentException("Öğretmen bulunamadı.");
         }
 
         var classroom = new Classroom
@@ -120,19 +133,24 @@ public class ClassroomService : IClassroomService
 
     public async Task UpdateAsync(UpdateClassroomDto dto)
     {
+        var validationResult = await _updateValidator.ValidateAsync(dto);
+
+        if (!validationResult.IsValid)
+            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+
         var classroom = await _classroomRepository.GetByIdAsync(dto.Id);
         if (classroom is null)
-            throw new Exception("Sınıf bulunamadı.");
+            throw new ArgumentException("Sınıf bulunamadı.");
 
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
         if (school is null)
-            throw new Exception("Okul bulunamadı.");
+            throw new ArgumentException("Okul bulunamadı.");
 
-        if (dto.TeacherId != null)
+        if (!string.IsNullOrWhiteSpace(dto.TeacherId))
         {
             var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
             if (teacher is null)
-                throw new Exception("Öğretmen bulunamadı.");
+                throw new ArgumentException("Öğretmen bulunamadı.");
         }
 
         classroom.SchoolId = dto.SchoolId;
@@ -147,8 +165,9 @@ public class ClassroomService : IClassroomService
     public async Task DeleteAsync(string id)
     {
         var classroom = await _classroomRepository.GetByIdAsync(id);
+
         if (classroom is null)
-            throw new Exception("Sınıf bulunamadı.");
+            throw new ArgumentException("Sınıf bulunamadı.");
 
         await _classroomRepository.DeleteAsync(id);
     }

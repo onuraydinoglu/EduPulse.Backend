@@ -1,9 +1,12 @@
+using EduPulse.API.Middlewares;
 using EduPulse.Business.Abstracts;
 using EduPulse.Business.Concretes;
+using EduPulse.Business.Validators.Students;
 using EduPulse.Repository.Abstracts;
 using EduPulse.Repository.Concretes;
 using EduPulse.Repository.Context;
 using EduPulse.Repository.Settings;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +40,8 @@ builder.Services.AddScoped<IParentService, ParentService>();
 builder.Services.AddScoped<IStudentGradeRepository, StudentGradeRepository>();
 builder.Services.AddScoped<IStudentGradeService, StudentGradeService>();
 
+builder.Services.AddValidatorsFromAssemblyContaining<CreateStudentDtoValidator>();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -54,6 +59,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
 app.UseSwagger();
 app.UseSwaggerUI();

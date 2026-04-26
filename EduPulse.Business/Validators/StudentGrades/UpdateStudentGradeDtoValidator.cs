@@ -3,13 +3,11 @@ using FluentValidation;
 
 namespace EduPulse.Business.Validators.StudentGrades;
 
-public class CreateStudentGradeDtoValidator : AbstractValidator<CreateStudentGradeDto>
+public class UpdateStudentGradeDtoValidator : AbstractValidator<UpdateStudentGradeDto>
 {
-    public CreateStudentGradeDtoValidator()
+    public UpdateStudentGradeDtoValidator()
     {
-        RuleFor(x => x.SchoolId).NotEmpty().WithMessage("Okul seçilmelidir.");
-        RuleFor(x => x.StudentId).NotEmpty().WithMessage("Öğrenci seçilmelidir.");
-        RuleFor(x => x.LessonId).NotEmpty().WithMessage("Ders seçilmelidir.");
+        RuleFor(x => x.Id).NotEmpty().WithMessage("Not Id boş olamaz.");
 
         RuleFor(x => x.Exam1).InclusiveBetween(0, 100);
         RuleFor(x => x.Exam2).InclusiveBetween(0, 100);

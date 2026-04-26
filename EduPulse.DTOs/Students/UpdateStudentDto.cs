@@ -1,11 +1,12 @@
-﻿using EduPulse.Entities.Common;
+﻿namespace EduPulse.DTOs.Students;
 
-namespace EduPulse.Entities.Students;
-
-public class Student : BaseEntity
+public class UpdateStudentDto
 {
+    public string Id { get; set; } = null!;
+
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
+
     public string SchoolNumber { get; set; } = null!;
     public string StudentPhone { get; set; } = null!;
 
@@ -15,5 +16,5 @@ public class Student : BaseEntity
     public List<string> ClubIds { get; set; } = new();
     public List<string> ParentIds { get; set; } = new();
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 }

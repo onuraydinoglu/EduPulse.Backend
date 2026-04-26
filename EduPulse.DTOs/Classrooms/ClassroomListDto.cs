@@ -9,7 +9,10 @@ public class ClassroomListDto
     public int Grade { get; set; }
     public string Section { get; set; } = null!;
 
+    public string Name => $"{Grade}-{Section}";
+
     public string? TeacherId { get; set; }
+    public string? TeacherName { get; set; }
 
     public bool IsActive { get; set; }
 }

@@ -25,6 +25,18 @@ builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<IClassroomRepository, ClassroomRepository>();
 builder.Services.AddScoped<IClassroomService, ClassroomService>();
 
+builder.Services.AddScoped<ITeacherLessonRepository, TeacherLessonRepository>();
+builder.Services.AddScoped<ITeacherLessonService, TeacherLessonService>();
+
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<IStudentService, StudentService>();
+
+builder.Services.AddScoped<IParentRepository, ParentRepository>();
+builder.Services.AddScoped<IParentService, ParentService>();
+
+builder.Services.AddScoped<IStudentGradeRepository, StudentGradeRepository>();
+builder.Services.AddScoped<IStudentGradeService, StudentGradeService>();
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();

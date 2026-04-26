@@ -16,21 +16,19 @@ public class ClassroomRepository : IClassroomRepository
 
     public async Task<List<Classroom>> GetAllAsync()
     {
-        return await _classrooms.Find(x => true).ToListAsync();
+        return await _classrooms.Find(x => x.IsActive).ToListAsync();
     }
 
     public async Task<List<Classroom>> GetBySchoolIdAsync(string schoolId)
     {
         return await _classrooms
-            .Find(x => x.SchoolId == schoolId)
+            .Find(x => x.SchoolId == schoolId && x.IsActive)
             .ToListAsync();
     }
 
     public async Task<Classroom?> GetByIdAsync(string id)
     {
-        return await _classrooms
-            .Find(x => x.Id == id)
-            .FirstOrDefaultAsync();
+        return await _classrooms.Find(x => x.Id == id).FirstOrDefaultAsync();
     }
 
     public async Task CreateAsync(Classroom classroom)
@@ -50,6 +48,10 @@ public class ClassroomRepository : IClassroomRepository
 
     public async Task DeleteAsync(string id)
     {
-        await _classrooms.DeleteOneAsync(x => x.Id == id);
+        var update = Builders<Classroom>.Update
+            .Set(x => x.IsActive, false)
+            .Set(x => x.UpdatedDate, DateTime.UtcNow);
+
+        await _classrooms.UpdateOneAsync(x => x.Id == id, update);
     }
 }

@@ -1,12 +1,16 @@
-﻿using EduPulse.Entities.Common;
+﻿namespace EduPulse.DTOs.StudentGrades;
 
-namespace EduPulse.Entities.StudentGrades;
-
-public class StudentGrade : BaseEntity
+public class StudentGradeListDto
 {
+    public string Id { get; set; } = null!;
+
     public string SchoolId { get; set; } = null!;
+
     public string StudentId { get; set; } = null!;
+    public string StudentName { get; set; } = null!;
+
     public string LessonId { get; set; } = null!;
+    public string LessonName { get; set; } = null!;
 
     public int Exam1 { get; set; }
     public int Exam2 { get; set; }
@@ -19,5 +23,5 @@ public class StudentGrade : BaseEntity
 
     public double Average { get; set; }
 
-    public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; }
 }

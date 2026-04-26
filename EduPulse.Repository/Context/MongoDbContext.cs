@@ -1,6 +1,10 @@
 ﻿using EduPulse.Entities.Classrooms;
 using EduPulse.Entities.Lessons;
+using EduPulse.Entities.Parents;
 using EduPulse.Entities.Schools;
+using EduPulse.Entities.StudentGrades;
+using EduPulse.Entities.Students;
+using EduPulse.Entities.TeacherLessons;
 using EduPulse.Entities.Teachers;
 using EduPulse.Repository.Settings;
 using Microsoft.Extensions.Options;
@@ -26,4 +30,12 @@ public class MongoDbContext
     _database.GetCollection<Teacher>("Teachers");
     public IMongoCollection<Classroom> Classrooms =>
     _database.GetCollection<Classroom>("Classrooms");
+    public IMongoCollection<TeacherLesson> TeacherLessons =>
+    _database.GetCollection<TeacherLesson>("TeacherLessons");
+    public IMongoCollection<Student> Students =>
+    _database.GetCollection<Student>("Students");
+    public IMongoCollection<Parent> Parents =>
+    _database.GetCollection<Parent>("Parents");
+    public IMongoCollection<StudentGrade> StudentGrades =>
+    _database.GetCollection<StudentGrade>("StudentGrades");
 }

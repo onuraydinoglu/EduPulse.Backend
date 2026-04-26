@@ -17,41 +17,43 @@ public class ParentsController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
-        => Ok(await _parentService.GetAllAsync());
+    {
+        var result = await _parentService.GetAllAsync();
+        return StatusCode(result.StatusCode, result);
+    }
 
     [HttpGet("school/{schoolId}")]
     public async Task<IActionResult> GetBySchool(string schoolId)
-        => Ok(await _parentService.GetBySchoolIdAsync(schoolId));
+    {
+        var result = await _parentService.GetBySchoolIdAsync(schoolId);
+        return StatusCode(result.StatusCode, result);
+    }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
-        var parent = await _parentService.GetByIdAsync(id);
-
-        if (parent is null)
-            return NotFound("Veli bulunamadı.");
-
-        return Ok(parent);
+        var result = await _parentService.GetByIdAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateParentDto dto)
     {
-        await _parentService.CreateAsync(dto);
-        return Ok("Veli oluşturuldu.");
+        var result = await _parentService.CreateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut]
     public async Task<IActionResult> Update(UpdateParentDto dto)
     {
-        await _parentService.UpdateAsync(dto);
-        return Ok("Veli güncellendi.");
+        var result = await _parentService.UpdateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        await _parentService.DeleteAsync(id);
-        return Ok("Veli silindi.");
+        var result = await _parentService.DeleteAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 }

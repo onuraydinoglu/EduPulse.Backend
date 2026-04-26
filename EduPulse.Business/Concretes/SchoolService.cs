@@ -1,4 +1,5 @@
 ﻿using EduPulse.Business.Abstracts;
+using EduPulse.DTOs.Common;
 using EduPulse.DTOs.Schools;
 using EduPulse.Entities.Schools;
 using EduPulse.Repository.Abstracts;
@@ -22,11 +23,11 @@ public class SchoolService : ISchoolService
         _updateValidator = updateValidator;
     }
 
-    public async Task<List<SchoolListDto>> GetAllAsync()
+    public async Task<Result<List<SchoolListDto>>> GetAllAsync()
     {
         var schools = await _schoolRepository.GetAllAsync();
 
-        return schools.Select(x => new SchoolListDto
+        var result = schools.Select(x => new SchoolListDto
         {
             Id = x.Id,
             Name = x.Name,
@@ -37,16 +38,18 @@ public class SchoolService : ISchoolService
             PrincipalName = x.PrincipalName,
             IsActive = x.IsActive
         }).ToList();
+
+        return Result<List<SchoolListDto>>.Success(result, "Okullar başarıyla listelendi.");
     }
 
-    public async Task<SchoolListDto?> GetByIdAsync(string id)
+    public async Task<Result<SchoolListDto>> GetByIdAsync(string id)
     {
         var school = await _schoolRepository.GetByIdAsync(id);
 
         if (school is null)
-            return null;
+            return Result<SchoolListDto>.Failure("Okul bulunamadı.", 404);
 
-        return new SchoolListDto
+        var result = new SchoolListDto
         {
             Id = school.Id,
             Name = school.Name,
@@ -57,14 +60,16 @@ public class SchoolService : ISchoolService
             PrincipalName = school.PrincipalName,
             IsActive = school.IsActive
         };
+
+        return Result<SchoolListDto>.Success(result, "Okul başarıyla getirildi.");
     }
 
-    public async Task CreateAsync(CreateSchoolDto dto)
+    public async Task<Result> CreateAsync(CreateSchoolDto dto)
     {
         var validationResult = await _createValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
-            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+            return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
         var school = new School
         {
@@ -79,19 +84,21 @@ public class SchoolService : ISchoolService
         };
 
         await _schoolRepository.CreateAsync(school);
+
+        return Result.Success("Okul başarıyla oluşturuldu.", 201);
     }
 
-    public async Task UpdateAsync(UpdateSchoolDto dto)
+    public async Task<Result> UpdateAsync(UpdateSchoolDto dto)
     {
         var validationResult = await _updateValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
-            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+            return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
         var school = await _schoolRepository.GetByIdAsync(dto.Id);
 
         if (school is null)
-            throw new ArgumentException("Okul bulunamadı.");
+            return Result.Failure("Okul bulunamadı.", 404);
 
         school.Name = dto.Name;
         school.City = dto.City;
@@ -103,15 +110,19 @@ public class SchoolService : ISchoolService
         school.IsActive = dto.IsActive;
 
         await _schoolRepository.UpdateAsync(school);
+
+        return Result.Success("Okul başarıyla güncellendi.");
     }
 
-    public async Task DeleteAsync(string id)
+    public async Task<Result> DeleteAsync(string id)
     {
         var school = await _schoolRepository.GetByIdAsync(id);
 
         if (school is null)
-            throw new ArgumentException("Okul bulunamadı.");
+            return Result.Failure("Okul bulunamadı.", 404);
 
         await _schoolRepository.DeleteAsync(id);
+
+        return Result.Success("Okul başarıyla silindi.");
     }
 }

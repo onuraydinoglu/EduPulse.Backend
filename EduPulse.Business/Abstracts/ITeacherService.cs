@@ -1,13 +1,14 @@
-﻿using EduPulse.DTOs.Teachers;
+﻿using EduPulse.DTOs.Common;
+using EduPulse.DTOs.Teachers;
 
 namespace EduPulse.Business.Abstracts;
 
 public interface ITeacherService
 {
-    Task<List<TeacherListDto>> GetAllAsync();
-    Task<List<TeacherListDto>> GetBySchoolIdAsync(string schoolId);
-    Task<TeacherListDto?> GetByIdAsync(string id);
-    Task CreateAsync(CreateTeacherDto dto);
-    Task UpdateAsync(UpdateTeacherDto dto);
-    Task DeleteAsync(string id);
+    Task<Result<List<TeacherListDto>>> GetAllAsync();
+    Task<Result<List<TeacherListDto>>> GetBySchoolIdAsync(string schoolId);
+    Task<Result<TeacherListDto>> GetByIdAsync(string id);
+    Task<Result> CreateAsync(CreateTeacherDto dto);
+    Task<Result> UpdateAsync(UpdateTeacherDto dto);
+    Task<Result> DeleteAsync(string id);
 }

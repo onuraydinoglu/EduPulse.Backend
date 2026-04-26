@@ -18,46 +18,42 @@ public class TeachersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var teachers = await _teacherService.GetAllAsync();
-        return Ok(teachers);
+        var result = await _teacherService.GetAllAsync();
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("school/{schoolId}")]
     public async Task<IActionResult> GetBySchoolId(string schoolId)
     {
-        var teachers = await _teacherService.GetBySchoolIdAsync(schoolId);
-        return Ok(teachers);
+        var result = await _teacherService.GetBySchoolIdAsync(schoolId);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
-        var teacher = await _teacherService.GetByIdAsync(id);
-
-        if (teacher is null)
-            return NotFound("Öğretmen bulunamadı.");
-
-        return Ok(teacher);
+        var result = await _teacherService.GetByIdAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateTeacherDto dto)
     {
-        await _teacherService.CreateAsync(dto);
-        return Ok("Öğretmen başarıyla oluşturuldu.");
+        var result = await _teacherService.CreateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut]
     public async Task<IActionResult> Update(UpdateTeacherDto dto)
     {
-        await _teacherService.UpdateAsync(dto);
-        return Ok("Öğretmen başarıyla güncellendi.");
+        var result = await _teacherService.UpdateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        await _teacherService.DeleteAsync(id);
-        return Ok("Öğretmen başarıyla silindi.");
+        var result = await _teacherService.DeleteAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 }

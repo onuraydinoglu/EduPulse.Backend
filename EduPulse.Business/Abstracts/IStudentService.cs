@@ -1,14 +1,15 @@
-﻿using EduPulse.DTOs.Students;
+﻿using EduPulse.DTOs.Common;
+using EduPulse.DTOs.Students;
 
 namespace EduPulse.Business.Abstracts;
 
 public interface IStudentService
 {
-    Task<List<StudentListDto>> GetAllAsync();
-    Task<List<StudentListDto>> GetBySchoolIdAsync(string schoolId);
-    Task<List<StudentListDto>> GetByClassroomIdAsync(string classroomId);
-    Task<StudentListDto?> GetByIdAsync(string id);
-    Task CreateAsync(CreateStudentDto dto);
-    Task UpdateAsync(UpdateStudentDto dto);
-    Task DeleteAsync(string id);
+    Task<Result<List<StudentListDto>>> GetAllAsync();
+    Task<Result<List<StudentListDto>>> GetBySchoolIdAsync(string schoolId);
+    Task<Result<List<StudentListDto>>> GetByClassroomIdAsync(string classroomId);
+    Task<Result<StudentListDto>> GetByIdAsync(string id);
+    Task<Result> CreateAsync(CreateStudentDto dto);
+    Task<Result> UpdateAsync(UpdateStudentDto dto);
+    Task<Result> DeleteAsync(string id);
 }

@@ -16,27 +16,51 @@ public class TeacherLessonsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _service.GetAllAsync();
+        return StatusCode(result.StatusCode, result);
+    }
 
     [HttpGet("school/{schoolId}")]
     public async Task<IActionResult> GetBySchool(string schoolId)
-        => Ok(await _service.GetBySchoolIdAsync(schoolId));
+    {
+        var result = await _service.GetBySchoolIdAsync(schoolId);
+        return StatusCode(result.StatusCode, result);
+    }
 
     [HttpGet("teacher/{teacherId}")]
     public async Task<IActionResult> GetByTeacher(string teacherId)
-        => Ok(await _service.GetByTeacherIdAsync(teacherId));
+    {
+        var result = await _service.GetByTeacherIdAsync(teacherId);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var result = await _service.GetByIdAsync(id);
+        return StatusCode(result.StatusCode, result);
+    }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateTeacherLessonDto dto)
     {
-        await _service.CreateAsync(dto);
-        return Ok("Atama yapıldı.");
+        var result = await _service.CreateAsync(dto);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPut]
+    public async Task<IActionResult> Update(UpdateTeacherLessonDto dto)
+    {
+        var result = await _service.UpdateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        await _service.DeleteAsync(id);
-        return Ok("Silindi.");
+        var result = await _service.DeleteAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 }

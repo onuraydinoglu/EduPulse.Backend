@@ -18,53 +18,49 @@ public class StudentsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var students = await _studentService.GetAllAsync();
-        return Ok(students);
+        var result = await _studentService.GetAllAsync();
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("school/{schoolId}")]
     public async Task<IActionResult> GetBySchoolId(string schoolId)
     {
-        var students = await _studentService.GetBySchoolIdAsync(schoolId);
-        return Ok(students);
+        var result = await _studentService.GetBySchoolIdAsync(schoolId);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("classroom/{classroomId}")]
     public async Task<IActionResult> GetByClassroomId(string classroomId)
     {
-        var students = await _studentService.GetByClassroomIdAsync(classroomId);
-        return Ok(students);
+        var result = await _studentService.GetByClassroomIdAsync(classroomId);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
-        var student = await _studentService.GetByIdAsync(id);
-
-        if (student is null)
-            return NotFound("Öğrenci bulunamadı.");
-
-        return Ok(student);
+        var result = await _studentService.GetByIdAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateStudentDto dto)
     {
-        await _studentService.CreateAsync(dto);
-        return Ok("Öğrenci başarıyla oluşturuldu.");
+        var result = await _studentService.CreateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut]
     public async Task<IActionResult> Update(UpdateStudentDto dto)
     {
-        await _studentService.UpdateAsync(dto);
-        return Ok("Öğrenci başarıyla güncellendi.");
+        var result = await _studentService.UpdateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        await _studentService.DeleteAsync(id);
-        return Ok("Öğrenci başarıyla silindi.");
+        var result = await _studentService.DeleteAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using EduPulse.Business.Abstracts;
+using EduPulse.DTOs.Common;
 using EduPulse.DTOs.Teachers;
 using EduPulse.Entities.Teachers;
 using EduPulse.Repository.Abstracts;
@@ -25,11 +26,11 @@ public class TeacherService : ITeacherService
         _updateValidator = updateValidator;
     }
 
-    public async Task<List<TeacherListDto>> GetAllAsync()
+    public async Task<Result<List<TeacherListDto>>> GetAllAsync()
     {
         var teachers = await _teacherRepository.GetAllAsync();
 
-        return teachers.Select(x => new TeacherListDto
+        var result = teachers.Select(x => new TeacherListDto
         {
             Id = x.Id,
             FullName = $"{x.FirstName} {x.LastName}",
@@ -38,13 +39,20 @@ public class TeacherService : ITeacherService
             SchoolId = x.SchoolId,
             IsActive = x.IsActive
         }).ToList();
+
+        return Result<List<TeacherListDto>>.Success(result, "Öğretmenler başarıyla listelendi.");
     }
 
-    public async Task<List<TeacherListDto>> GetBySchoolIdAsync(string schoolId)
+    public async Task<Result<List<TeacherListDto>>> GetBySchoolIdAsync(string schoolId)
     {
+        var school = await _schoolRepository.GetByIdAsync(schoolId);
+
+        if (school is null)
+            return Result<List<TeacherListDto>>.Failure("Okul bulunamadı.", 404);
+
         var teachers = await _teacherRepository.GetBySchoolIdAsync(schoolId);
 
-        return teachers.Select(x => new TeacherListDto
+        var result = teachers.Select(x => new TeacherListDto
         {
             Id = x.Id,
             FullName = $"{x.FirstName} {x.LastName}",
@@ -53,16 +61,18 @@ public class TeacherService : ITeacherService
             SchoolId = x.SchoolId,
             IsActive = x.IsActive
         }).ToList();
+
+        return Result<List<TeacherListDto>>.Success(result, "Okula ait öğretmenler başarıyla listelendi.");
     }
 
-    public async Task<TeacherListDto?> GetByIdAsync(string id)
+    public async Task<Result<TeacherListDto>> GetByIdAsync(string id)
     {
         var teacher = await _teacherRepository.GetByIdAsync(id);
 
         if (teacher is null)
-            return null;
+            return Result<TeacherListDto>.Failure("Öğretmen bulunamadı.", 404);
 
-        return new TeacherListDto
+        var result = new TeacherListDto
         {
             Id = teacher.Id,
             FullName = $"{teacher.FirstName} {teacher.LastName}",
@@ -71,19 +81,21 @@ public class TeacherService : ITeacherService
             SchoolId = teacher.SchoolId,
             IsActive = teacher.IsActive
         };
+
+        return Result<TeacherListDto>.Success(result, "Öğretmen başarıyla getirildi.");
     }
 
-    public async Task CreateAsync(CreateTeacherDto dto)
+    public async Task<Result> CreateAsync(CreateTeacherDto dto)
     {
         var validationResult = await _createValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
-            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+            return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
 
         if (school is null)
-            throw new ArgumentException("Okul bulunamadı.");
+            return Result.Failure("Okul bulunamadı.", 404);
 
         var teacher = new Teacher
         {
@@ -96,24 +108,26 @@ public class TeacherService : ITeacherService
         };
 
         await _teacherRepository.CreateAsync(teacher);
+
+        return Result.Success("Öğretmen başarıyla oluşturuldu.", 201);
     }
 
-    public async Task UpdateAsync(UpdateTeacherDto dto)
+    public async Task<Result> UpdateAsync(UpdateTeacherDto dto)
     {
         var validationResult = await _updateValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
-            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+            return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
         var teacher = await _teacherRepository.GetByIdAsync(dto.Id);
 
         if (teacher is null)
-            throw new ArgumentException("Öğretmen bulunamadı.");
+            return Result.Failure("Öğretmen bulunamadı.", 404);
 
         var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
 
         if (school is null)
-            throw new ArgumentException("Okul bulunamadı.");
+            return Result.Failure("Okul bulunamadı.", 404);
 
         teacher.FirstName = dto.FirstName;
         teacher.LastName = dto.LastName;
@@ -123,15 +137,19 @@ public class TeacherService : ITeacherService
         teacher.IsActive = dto.IsActive;
 
         await _teacherRepository.UpdateAsync(teacher);
+
+        return Result.Success("Öğretmen başarıyla güncellendi.");
     }
 
-    public async Task DeleteAsync(string id)
+    public async Task<Result> DeleteAsync(string id)
     {
         var teacher = await _teacherRepository.GetByIdAsync(id);
 
         if (teacher is null)
-            throw new ArgumentException("Öğretmen bulunamadı.");
+            return Result.Failure("Öğretmen bulunamadı.", 404);
 
         await _teacherRepository.DeleteAsync(id);
+
+        return Result.Success("Öğretmen başarıyla silindi.");
     }
 }

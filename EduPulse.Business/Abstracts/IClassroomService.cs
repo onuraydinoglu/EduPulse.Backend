@@ -1,13 +1,14 @@
 ﻿using EduPulse.DTOs.Classrooms;
+using EduPulse.DTOs.Common;
 
 namespace EduPulse.Business.Abstracts;
 
 public interface IClassroomService
 {
-    Task<List<ClassroomListDto>> GetAllAsync();
-    Task<List<ClassroomListDto>> GetBySchoolIdAsync(string schoolId);
-    Task<ClassroomListDto?> GetByIdAsync(string id);
-    Task CreateAsync(CreateClassroomDto dto);
-    Task UpdateAsync(UpdateClassroomDto dto);
-    Task DeleteAsync(string id);
+    Task<Result<List<ClassroomListDto>>> GetAllAsync();
+    Task<Result<List<ClassroomListDto>>> GetBySchoolIdAsync(string schoolId);
+    Task<Result<ClassroomListDto>> GetByIdAsync(string id);
+    Task<Result> CreateAsync(CreateClassroomDto dto);
+    Task<Result> UpdateAsync(UpdateClassroomDto dto);
+    Task<Result> DeleteAsync(string id);
 }

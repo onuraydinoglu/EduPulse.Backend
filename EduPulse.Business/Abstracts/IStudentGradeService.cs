@@ -1,13 +1,15 @@
-﻿using EduPulse.DTOs.StudentGrades;
+﻿using EduPulse.DTOs.Common;
+using EduPulse.DTOs.StudentGrades;
 
 namespace EduPulse.Business.Abstracts;
 
 public interface IStudentGradeService
 {
-    Task<List<StudentGradeListDto>> GetAllAsync();
-    Task<List<StudentGradeListDto>> GetByStudentIdAsync(string studentId);
-    Task<List<StudentGradeListDto>> GetByLessonIdAsync(string lessonId);
-    Task CreateAsync(CreateStudentGradeDto dto);
-    Task UpdateAsync(UpdateStudentGradeDto dto);
-    Task DeleteAsync(string id);
+    Task<Result<List<StudentGradeListDto>>> GetAllAsync();
+    Task<Result<List<StudentGradeListDto>>> GetByStudentIdAsync(string studentId);
+    Task<Result<List<StudentGradeListDto>>> GetByLessonIdAsync(string lessonId);
+    Task<Result<StudentGradeListDto>> GetByIdAsync(string id);
+    Task<Result> CreateAsync(CreateStudentGradeDto dto);
+    Task<Result> UpdateAsync(UpdateStudentGradeDto dto);
+    Task<Result> DeleteAsync(string id);
 }

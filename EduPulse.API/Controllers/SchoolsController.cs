@@ -18,39 +18,35 @@ public class SchoolsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var schools = await _schoolService.GetAllAsync();
-        return Ok(schools);
+        var result = await _schoolService.GetAllAsync();
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
-        var school = await _schoolService.GetByIdAsync(id);
-
-        if (school is null)
-            return NotFound("Okul bulunamadı.");
-
-        return Ok(school);
+        var result = await _schoolService.GetByIdAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateSchoolDto dto)
     {
-        await _schoolService.CreateAsync(dto);
-        return Ok("Okul başarıyla oluşturuldu.");
+        var result = await _schoolService.CreateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut]
     public async Task<IActionResult> Update(UpdateSchoolDto dto)
     {
-        await _schoolService.UpdateAsync(dto);
-        return Ok("Okul başarıyla güncellendi.");
+        var result = await _schoolService.UpdateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        await _schoolService.DeleteAsync(id);
-        return Ok("Okul başarıyla silindi.");
+        var result = await _schoolService.DeleteAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 }

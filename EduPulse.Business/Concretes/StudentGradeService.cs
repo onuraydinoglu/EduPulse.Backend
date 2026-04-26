@@ -1,4 +1,5 @@
 ﻿using EduPulse.Business.Abstracts;
+using EduPulse.DTOs.Common;
 using EduPulse.DTOs.StudentGrades;
 using EduPulse.Entities.StudentGrades;
 using EduPulse.Repository.Abstracts;
@@ -8,167 +9,142 @@ namespace EduPulse.Business.Concretes;
 
 public class StudentGradeService : IStudentGradeService
 {
-    private readonly IStudentGradeRepository _repository;
+    private readonly IStudentGradeRepository _studentGradeRepository;
     private readonly IStudentRepository _studentRepository;
     private readonly ILessonRepository _lessonRepository;
-    private readonly ISchoolRepository _schoolRepository;
     private readonly IValidator<CreateStudentGradeDto> _createValidator;
     private readonly IValidator<UpdateStudentGradeDto> _updateValidator;
 
     public StudentGradeService(
-        IStudentGradeRepository repository,
+        IStudentGradeRepository studentGradeRepository,
         IStudentRepository studentRepository,
         ILessonRepository lessonRepository,
-        ISchoolRepository schoolRepository,
         IValidator<CreateStudentGradeDto> createValidator,
         IValidator<UpdateStudentGradeDto> updateValidator)
     {
-        _repository = repository;
+        _studentGradeRepository = studentGradeRepository;
         _studentRepository = studentRepository;
         _lessonRepository = lessonRepository;
-        _schoolRepository = schoolRepository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
     }
 
-    public async Task<List<StudentGradeListDto>> GetAllAsync()
+    public async Task<Result<List<StudentGradeListDto>>> GetAllAsync()
     {
-        var list = await _repository.GetAllAsync();
-        var students = await _studentRepository.GetAllAsync();
-        var lessons = await _lessonRepository.GetAllAsync();
+        var grades = await _studentGradeRepository.GetAllAsync();
 
-        return list.Select(x =>
+        var result = grades.Select(x => new StudentGradeListDto
         {
-            var student = students.FirstOrDefault(s => s.Id == x.StudentId);
-            var lesson = lessons.FirstOrDefault(l => l.Id == x.LessonId);
-
-            return new StudentGradeListDto
-            {
-                Id = x.Id,
-                SchoolId = x.SchoolId,
-                StudentId = x.StudentId,
-                StudentName = student != null
-                    ? $"{student.FirstName} {student.LastName}"
-                    : "",
-                LessonId = x.LessonId,
-                LessonName = lesson?.Name ?? "",
-                Exam1 = x.Exam1,
-                Exam2 = x.Exam2,
-                Project = x.Project,
-                Activity1 = x.Activity1,
-                Activity2 = x.Activity2,
-                Activity3 = x.Activity3,
-                Average = x.Average,
-                IsActive = x.IsActive
-            };
+            Id = x.Id,
+            StudentId = x.StudentId,
+            LessonId = x.LessonId,
+            Exam1 = x.Exam1,
+            Exam2 = x.Exam2,
+            Project = x.Project,
+            Activity1 = x.Activity1,
+            Activity2 = x.Activity2,
+            Activity3 = x.Activity3,
+            IsActive = x.IsActive
         }).ToList();
+
+        return Result<List<StudentGradeListDto>>.Success(result, "Öğrenci notları başarıyla listelendi.");
     }
 
-    public async Task<List<StudentGradeListDto>> GetByStudentIdAsync(string studentId)
+    public async Task<Result<List<StudentGradeListDto>>> GetByStudentIdAsync(string studentId)
     {
-        var list = await _repository.GetByStudentIdAsync(studentId);
-        var lessons = await _lessonRepository.GetAllAsync();
         var student = await _studentRepository.GetByIdAsync(studentId);
 
-        return list.Select(x =>
-        {
-            var lesson = lessons.FirstOrDefault(l => l.Id == x.LessonId);
+        if (student is null)
+            return Result<List<StudentGradeListDto>>.Failure("Öğrenci bulunamadı.", 404);
 
-            return new StudentGradeListDto
-            {
-                Id = x.Id,
-                SchoolId = x.SchoolId,
-                StudentId = x.StudentId,
-                StudentName = student != null
-                    ? $"{student.FirstName} {student.LastName}"
-                    : "",
-                LessonId = x.LessonId,
-                LessonName = lesson?.Name ?? "",
-                Exam1 = x.Exam1,
-                Exam2 = x.Exam2,
-                Project = x.Project,
-                Activity1 = x.Activity1,
-                Activity2 = x.Activity2,
-                Activity3 = x.Activity3,
-                Average = x.Average,
-                IsActive = x.IsActive
-            };
+        var grades = await _studentGradeRepository.GetByStudentIdAsync(studentId);
+
+        var result = grades.Select(x => new StudentGradeListDto
+        {
+            Id = x.Id,
+            StudentId = x.StudentId,
+            LessonId = x.LessonId,
+            Exam1 = x.Exam1,
+            Exam2 = x.Exam2,
+            Project = x.Project,
+            Activity1 = x.Activity1,
+            Activity2 = x.Activity2,
+            Activity3 = x.Activity3,
+            IsActive = x.IsActive
         }).ToList();
+
+        return Result<List<StudentGradeListDto>>.Success(result, "Öğrenciye ait notlar başarıyla listelendi.");
     }
 
-    public async Task<List<StudentGradeListDto>> GetByLessonIdAsync(string lessonId)
+    public async Task<Result<List<StudentGradeListDto>>> GetByLessonIdAsync(string lessonId)
     {
-        var list = await _repository.GetByLessonIdAsync(lessonId);
-        var students = await _studentRepository.GetAllAsync();
         var lesson = await _lessonRepository.GetByIdAsync(lessonId);
 
-        return list.Select(x =>
-        {
-            var student = students.FirstOrDefault(s => s.Id == x.StudentId);
+        if (lesson is null)
+            return Result<List<StudentGradeListDto>>.Failure("Ders bulunamadı.", 404);
 
-            return new StudentGradeListDto
-            {
-                Id = x.Id,
-                SchoolId = x.SchoolId,
-                StudentId = x.StudentId,
-                StudentName = student != null
-                    ? $"{student.FirstName} {student.LastName}"
-                    : "",
-                LessonId = x.LessonId,
-                LessonName = lesson?.Name ?? "",
-                Exam1 = x.Exam1,
-                Exam2 = x.Exam2,
-                Project = x.Project,
-                Activity1 = x.Activity1,
-                Activity2 = x.Activity2,
-                Activity3 = x.Activity3,
-                Average = x.Average,
-                IsActive = x.IsActive
-            };
+        var grades = await _studentGradeRepository.GetByLessonIdAsync(lessonId);
+
+        var result = grades.Select(x => new StudentGradeListDto
+        {
+            Id = x.Id,
+            StudentId = x.StudentId,
+            LessonId = x.LessonId,
+            Exam1 = x.Exam1,
+            Exam2 = x.Exam2,
+            Project = x.Project,
+            Activity1 = x.Activity1,
+            Activity2 = x.Activity2,
+            Activity3 = x.Activity3,
+            IsActive = x.IsActive
         }).ToList();
+
+        return Result<List<StudentGradeListDto>>.Success(result, "Derse ait notlar başarıyla listelendi.");
     }
 
-    public async Task CreateAsync(CreateStudentGradeDto dto)
+    public async Task<Result<StudentGradeListDto>> GetByIdAsync(string id)
+    {
+        var grade = await _studentGradeRepository.GetByIdAsync(id);
+
+        if (grade is null)
+            return Result<StudentGradeListDto>.Failure("Not kaydı bulunamadı.", 404);
+
+        var result = new StudentGradeListDto
+        {
+            Id = grade.Id,
+            StudentId = grade.StudentId,
+            LessonId = grade.LessonId,
+            Exam1 = grade.Exam1,
+            Exam2 = grade.Exam2,
+            Project = grade.Project,
+            Activity1 = grade.Activity1,
+            Activity2 = grade.Activity2,
+            Activity3 = grade.Activity3,
+            IsActive = grade.IsActive
+        };
+
+        return Result<StudentGradeListDto>.Success(result, "Not kaydı başarıyla getirildi.");
+    }
+
+    public async Task<Result> CreateAsync(CreateStudentGradeDto dto)
     {
         var validationResult = await _createValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
-            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
-
-        var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
-        if (school is null)
-            throw new ArgumentException("Okul bulunamadı.");
+            return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
         var student = await _studentRepository.GetByIdAsync(dto.StudentId);
+
         if (student is null)
-            throw new ArgumentException("Öğrenci bulunamadı.");
+            return Result.Failure("Öğrenci bulunamadı.", 404);
 
         var lesson = await _lessonRepository.GetByIdAsync(dto.LessonId);
+
         if (lesson is null)
-            throw new ArgumentException("Ders bulunamadı.");
+            return Result.Failure("Ders bulunamadı.", 404);
 
-        if (student.SchoolId != dto.SchoolId)
-            throw new ArgumentException("Seçilen öğrenci bu okula ait değil.");
-
-        if (lesson.SchoolId != dto.SchoolId)
-            throw new ArgumentException("Seçilen ders bu okula ait değil.");
-
-        var existing = await _repository.GetByStudentAndLessonAsync(dto.StudentId, dto.LessonId);
-        if (existing != null)
-            throw new ArgumentException("Bu öğrenci için bu derste zaten not girilmiş.");
-
-        var average = CalculateAverage(
-            dto.Exam1,
-            dto.Exam2,
-            dto.Project,
-            dto.Activity1,
-            dto.Activity2,
-            dto.Activity3
-        );
-
-        var entity = new StudentGrade
+        var grade = new StudentGrade
         {
-            SchoolId = dto.SchoolId,
             StudentId = dto.StudentId,
             LessonId = dto.LessonId,
             Exam1 = dto.Exam1,
@@ -177,65 +153,60 @@ public class StudentGradeService : IStudentGradeService
             Activity1 = dto.Activity1,
             Activity2 = dto.Activity2,
             Activity3 = dto.Activity3,
-            Average = average,
             IsActive = true
         };
 
-        await _repository.CreateAsync(entity);
+        await _studentGradeRepository.CreateAsync(grade);
+
+        return Result.Success("Öğrenci notu başarıyla oluşturuldu.", 201);
     }
 
-    public async Task UpdateAsync(UpdateStudentGradeDto dto)
+    public async Task<Result> UpdateAsync(UpdateStudentGradeDto dto)
     {
         var validationResult = await _updateValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
-            throw new ArgumentException(validationResult.Errors.First().ErrorMessage);
+            return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
-        var entity = await _repository.GetByIdAsync(dto.Id);
-        if (entity is null)
-            throw new ArgumentException("Not bulunamadı.");
+        var grade = await _studentGradeRepository.GetByIdAsync(dto.Id);
 
-        var average = CalculateAverage(
-            dto.Exam1,
-            dto.Exam2,
-            dto.Project,
-            dto.Activity1,
-            dto.Activity2,
-            dto.Activity3
-        );
+        if (grade is null)
+            return Result.Failure("Not kaydı bulunamadı.", 404);
 
-        entity.Exam1 = dto.Exam1;
-        entity.Exam2 = dto.Exam2;
-        entity.Project = dto.Project;
-        entity.Activity1 = dto.Activity1;
-        entity.Activity2 = dto.Activity2;
-        entity.Activity3 = dto.Activity3;
-        entity.Average = average;
-        entity.IsActive = dto.IsActive;
+        var student = await _studentRepository.GetByIdAsync(dto.StudentId);
 
-        await _repository.UpdateAsync(entity);
+        if (student is null)
+            return Result.Failure("Öğrenci bulunamadı.", 404);
+
+        var lesson = await _lessonRepository.GetByIdAsync(dto.LessonId);
+
+        if (lesson is null)
+            return Result.Failure("Ders bulunamadı.", 404);
+
+        grade.StudentId = dto.StudentId;
+        grade.LessonId = dto.LessonId;
+        grade.Exam1 = dto.Exam1;
+        grade.Exam2 = dto.Exam2;
+        grade.Project = dto.Project;
+        grade.Activity1 = dto.Activity1;
+        grade.Activity2 = dto.Activity2;
+        grade.Activity3 = dto.Activity3;
+        grade.IsActive = dto.IsActive;
+
+        await _studentGradeRepository.UpdateAsync(grade);
+
+        return Result.Success("Öğrenci notu başarıyla güncellendi.");
     }
 
-    public async Task DeleteAsync(string id)
+    public async Task<Result> DeleteAsync(string id)
     {
-        var entity = await _repository.GetByIdAsync(id);
+        var grade = await _studentGradeRepository.GetByIdAsync(id);
 
-        if (entity is null)
-            throw new ArgumentException("Not bulunamadı.");
+        if (grade is null)
+            return Result.Failure("Not kaydı bulunamadı.", 404);
 
-        await _repository.DeleteAsync(id);
-    }
+        await _studentGradeRepository.DeleteAsync(id);
 
-    private double CalculateAverage(
-        double exam1,
-        double exam2,
-        double project,
-        double activity1,
-        double activity2,
-        double activity3)
-    {
-        var total = exam1 + exam2 + project + activity1 + activity2 + activity3;
-
-        return total / 6.0;
+        return Result.Success("Öğrenci notu başarıyla silindi.");
     }
 }

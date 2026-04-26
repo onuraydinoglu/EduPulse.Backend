@@ -18,33 +18,42 @@ public class ClassroomsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        return Ok(await _classroomService.GetAllAsync());
+        var result = await _classroomService.GetAllAsync();
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("school/{schoolId}")]
-    public async Task<IActionResult> GetBySchool(string schoolId)
+    public async Task<IActionResult> GetBySchoolId(string schoolId)
     {
-        return Ok(await _classroomService.GetBySchoolIdAsync(schoolId));
+        var result = await _classroomService.GetBySchoolIdAsync(schoolId);
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var result = await _classroomService.GetByIdAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
     public async Task<IActionResult> Create(CreateClassroomDto dto)
     {
-        await _classroomService.CreateAsync(dto);
-        return Ok("Sınıf oluşturuldu.");
+        var result = await _classroomService.CreateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut]
     public async Task<IActionResult> Update(UpdateClassroomDto dto)
     {
-        await _classroomService.UpdateAsync(dto);
-        return Ok("Sınıf güncellendi.");
+        var result = await _classroomService.UpdateAsync(dto);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
-        await _classroomService.DeleteAsync(id);
-        return Ok("Sınıf silindi.");
+        var result = await _classroomService.DeleteAsync(id);
+        return StatusCode(result.StatusCode, result);
     }
 }

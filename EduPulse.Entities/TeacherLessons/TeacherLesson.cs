@@ -8,7 +8,7 @@ namespace EduPulse.Entities.TeacherLessons
 
         public string TeacherId { get; set; } = null!;
         public string LessonId { get; set; } = null!;
-        public string ClassId { get; set; } = null!;
+        public string ClassroomId { get; set; } = null!;
 
         public bool IsActive { get; set; } = true;
     }

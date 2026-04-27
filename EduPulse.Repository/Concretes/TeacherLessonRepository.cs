@@ -38,6 +38,20 @@ public class TeacherLessonRepository : ITeacherLessonRepository
         return await _teacherLessons.Find(x => x.Id == id).FirstOrDefaultAsync();
     }
 
+    public async Task<TeacherLesson?> GetByTeacherLessonAndClassroomAsync(
+    string teacherId,
+    string lessonId,
+    string classroomId)
+    {
+        return await _teacherLessons
+            .Find(x =>
+                x.TeacherId == teacherId &&
+                x.LessonId == lessonId &&
+                x.ClassroomId == classroomId &&
+                x.IsActive)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task CreateAsync(TeacherLesson teacherLesson)
     {
         await _teacherLessons.InsertOneAsync(teacherLesson);

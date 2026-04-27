@@ -12,6 +12,8 @@ public class StudentGradeService : IStudentGradeService
     private readonly IStudentGradeRepository _studentGradeRepository;
     private readonly IStudentRepository _studentRepository;
     private readonly ILessonRepository _lessonRepository;
+    private readonly ITeacherRepository _teacherRepository;
+    private readonly ITeacherLessonRepository _teacherLessonRepository;
     private readonly IValidator<CreateStudentGradeDto> _createValidator;
     private readonly IValidator<UpdateStudentGradeDto> _updateValidator;
 
@@ -19,12 +21,16 @@ public class StudentGradeService : IStudentGradeService
         IStudentGradeRepository studentGradeRepository,
         IStudentRepository studentRepository,
         ILessonRepository lessonRepository,
+        ITeacherRepository teacherRepository,
+        ITeacherLessonRepository teacherLessonRepository,
         IValidator<CreateStudentGradeDto> createValidator,
         IValidator<UpdateStudentGradeDto> updateValidator)
     {
         _studentGradeRepository = studentGradeRepository;
         _studentRepository = studentRepository;
         _lessonRepository = lessonRepository;
+        _teacherRepository = teacherRepository;
+        _teacherLessonRepository = teacherLessonRepository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
     }
@@ -143,8 +149,38 @@ public class StudentGradeService : IStudentGradeService
         if (lesson is null)
             return Result.Failure("Ders bulunamadı.", 404);
 
+        if (student.SchoolId != dto.SchoolId)
+            return Result.Failure("Öğrenci bu okula ait değil.", 400);
+
+        var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
+
+        if (teacher is null)
+            return Result.Failure("Öğretmen bulunamadı.", 404);
+
+        if (teacher.SchoolId != dto.SchoolId)
+            return Result.Failure("Öğretmen bu okula ait değil.", 400);
+
+        var teacherLesson = await _teacherLessonRepository.GetByTeacherLessonAndClassroomAsync(
+            dto.TeacherId,
+            dto.LessonId,
+            student.ClassroomId
+        );
+
+        if (teacherLesson is null)
+            return Result.Failure("Bu öğretmen bu öğrenciye bu dersten not giremez.", 403);
+
+        var existingGrade = await _studentGradeRepository
+            .GetByStudentAndLessonAsync(dto.StudentId, dto.LessonId);
+
+        if (existingGrade is not null)
+            return Result.Failure("Bu öğrenciye bu dersten zaten not girilmiş. Mevcut not kaydını güncelleyin.", 409);
+
+        var average = (dto.Exam1 + dto.Exam2 + dto.Project + dto.Activity1 + dto.Activity2 + dto.Activity3) / 6.0;
+
         var grade = new StudentGrade
         {
+            SchoolId = dto.SchoolId,
+            TeacherId = dto.TeacherId,
             StudentId = dto.StudentId,
             LessonId = dto.LessonId,
             Exam1 = dto.Exam1,
@@ -153,6 +189,7 @@ public class StudentGradeService : IStudentGradeService
             Activity1 = dto.Activity1,
             Activity2 = dto.Activity2,
             Activity3 = dto.Activity3,
+            Average = average,
             IsActive = true
         };
 
@@ -183,6 +220,30 @@ public class StudentGradeService : IStudentGradeService
         if (lesson is null)
             return Result.Failure("Ders bulunamadı.", 404);
 
+        if (student.SchoolId != dto.SchoolId)
+            return Result.Failure("Öğrenci bu okula ait değil.", 400);
+
+        var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
+
+        if (teacher is null)
+            return Result.Failure("Öğretmen bulunamadı.", 404);
+
+        if (teacher.SchoolId != dto.SchoolId)
+            return Result.Failure("Öğretmen bu okula ait değil.", 400);
+
+        var teacherLesson = await _teacherLessonRepository.GetByTeacherLessonAndClassroomAsync(
+            dto.TeacherId,
+            dto.LessonId,
+            student.ClassroomId
+        );
+
+        if (teacherLesson is null)
+            return Result.Failure("Bu öğretmen bu öğrenciye bu dersten not giremez.", 403);
+
+        var average = (dto.Exam1 + dto.Exam2 + dto.Project + dto.Activity1 + dto.Activity2 + dto.Activity3) / 6.0;
+
+        grade.SchoolId = dto.SchoolId;
+        grade.TeacherId = dto.TeacherId;
         grade.StudentId = dto.StudentId;
         grade.LessonId = dto.LessonId;
         grade.Exam1 = dto.Exam1;
@@ -191,6 +252,7 @@ public class StudentGradeService : IStudentGradeService
         grade.Activity1 = dto.Activity1;
         grade.Activity2 = dto.Activity2;
         grade.Activity3 = dto.Activity3;
+        grade.Average = average;
         grade.IsActive = dto.IsActive;
 
         await _studentGradeRepository.UpdateAsync(grade);

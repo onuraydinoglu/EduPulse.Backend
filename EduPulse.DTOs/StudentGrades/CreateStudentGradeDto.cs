@@ -3,6 +3,7 @@
 public class CreateStudentGradeDto
 {
     public string SchoolId { get; set; } = null!;
+    public string TeacherId { get; set; } = null!;
     public string StudentId { get; set; } = null!;
     public string LessonId { get; set; } = null!;
 

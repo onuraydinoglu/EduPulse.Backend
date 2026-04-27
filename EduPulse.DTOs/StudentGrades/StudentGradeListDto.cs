@@ -3,12 +3,10 @@
 public class StudentGradeListDto
 {
     public string Id { get; set; } = null!;
-
     public string SchoolId { get; set; } = null!;
-
+    public string TeacherId { get; set; } = null!;
     public string StudentId { get; set; } = null!;
     public string StudentName { get; set; } = null!;
-
     public string LessonId { get; set; } = null!;
     public string LessonName { get; set; } = null!;
 

@@ -7,9 +7,21 @@ public class CreateStudentGradeDtoValidator : AbstractValidator<CreateStudentGra
 {
     public CreateStudentGradeDtoValidator()
     {
-        RuleFor(x => x.SchoolId).NotEmpty().WithMessage("Okul seçilmelidir.");
-        RuleFor(x => x.StudentId).NotEmpty().WithMessage("Öğrenci seçilmelidir.");
-        RuleFor(x => x.LessonId).NotEmpty().WithMessage("Ders seçilmelidir.");
+        RuleFor(x => x.SchoolId)
+            .NotEmpty()
+            .WithMessage("Okul seçilmelidir.");
+
+        RuleFor(x => x.TeacherId)
+            .NotEmpty()
+            .WithMessage("Öğretmen seçilmelidir.");
+
+        RuleFor(x => x.StudentId)
+            .NotEmpty()
+            .WithMessage("Öğrenci seçilmelidir.");
+
+        RuleFor(x => x.LessonId)
+            .NotEmpty()
+            .WithMessage("Ders seçilmelidir.");
 
         RuleFor(x => x.Exam1).InclusiveBetween(0, 100);
         RuleFor(x => x.Exam2).InclusiveBetween(0, 100);

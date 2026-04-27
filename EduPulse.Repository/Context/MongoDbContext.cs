@@ -70,6 +70,15 @@ public class MongoDbContext
                 Sparse = true,
                 Name = "UX_Schools_Email"
             }));
+
+       Schools.Indexes.CreateOne(new CreateIndexModel<School>(
+       Builders<School>.IndexKeys.Ascending(x => x.PhoneNumber),
+       new CreateIndexOptions
+       {
+           Unique = true,
+           Sparse = true,
+           Name = "UX_Schools_PhoneNumber"
+       }));
     }
 
     private void CreateLessonIndexes()

@@ -82,6 +82,12 @@ public class GlobalExceptionMiddleware
         if (errorMessage.Contains("UX_Students_SchoolId_SchoolNumber"))
             return "Bu okul numarası bu okulda zaten kullanılıyor.";
 
+        if (errorMessage.Contains("UX_Schools_Email"))
+            return "Bu e-posta adresiyle kayıtlı bir okul zaten var.";
+
+        if (errorMessage.Contains("UX_Schools_PhoneNumber"))
+            return "Bu telefonla zaten kayıt olundu.";
+
         if (errorMessage.Contains("UX_Lessons_SchoolId_Name"))
             return "Bu ders adı bu okulda zaten mevcut.";
 
@@ -99,9 +105,6 @@ public class GlobalExceptionMiddleware
 
         if (errorMessage.Contains("UX_Parents_SchoolId_Email"))
             return "Bu veli e-posta adresi bu okulda zaten kullanılıyor.";
-
-        if (errorMessage.Contains("UX_Schools_Email"))
-            return "Bu e-posta adresiyle kayıtlı bir okul zaten var.";
 
         if (errorMessage.Contains("UX_TeacherLessons_SchoolId_TeacherId_LessonId_ClassroomId"))
             return "Bu öğretmen bu sınıfa bu ders için zaten atanmış.";

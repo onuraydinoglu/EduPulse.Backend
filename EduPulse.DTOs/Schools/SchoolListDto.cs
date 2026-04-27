@@ -8,6 +8,7 @@ public class SchoolListDto
 
     public string City { get; set; } = null!;
     public string District { get; set; } = null!;
+    public string Address { get; set; } = null!;
 
     public string PhoneNumber { get; set; } = null!;
     public string? Email { get; set; }

@@ -6,6 +6,7 @@ public interface IStudentGradeRepository
 {
     Task<List<StudentGrade>> GetAllAsync();
     Task<List<StudentGrade>> GetBySchoolIdAsync(string schoolId);
+    Task<List<StudentGrade>> GetByTeacherIdAsync(string teacherId);
     Task<List<StudentGrade>> GetByStudentIdAsync(string studentId);
     Task<List<StudentGrade>> GetByLessonIdAsync(string lessonId);
     Task<StudentGrade?> GetByIdAsync(string id);

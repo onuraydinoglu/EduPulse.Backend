@@ -32,6 +32,7 @@ public class JwtService : IJwtService
             new Claim(ClaimTypes.Name, user.FullName),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.RoleName),
+
             new Claim("roleId", user.RoleId),
             new Claim("schoolId", user.SchoolId ?? ""),
             new Claim("teacherId", user.TeacherId ?? ""),

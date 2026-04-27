@@ -39,21 +39,27 @@ public class StudentGradeService : IStudentGradeService
     {
         var grades = await _studentGradeRepository.GetAllAsync();
 
-        var result = grades.Select(x => new StudentGradeListDto
-        {
-            Id = x.Id,
-            StudentId = x.StudentId,
-            LessonId = x.LessonId,
-            Exam1 = x.Exam1,
-            Exam2 = x.Exam2,
-            Project = x.Project,
-            Activity1 = x.Activity1,
-            Activity2 = x.Activity2,
-            Activity3 = x.Activity3,
-            IsActive = x.IsActive
-        }).ToList();
+        var result = grades.Select(MapToListDto).ToList();
 
         return Result<List<StudentGradeListDto>>.Success(result, "Öğrenci notları başarıyla listelendi.");
+    }
+
+    public async Task<Result<List<StudentGradeListDto>>> GetBySchoolIdAsync(string schoolId)
+    {
+        var grades = await _studentGradeRepository.GetBySchoolIdAsync(schoolId);
+
+        var result = grades.Select(MapToListDto).ToList();
+
+        return Result<List<StudentGradeListDto>>.Success(result, "Okula ait notlar başarıyla listelendi.");
+    }
+
+    public async Task<Result<List<StudentGradeListDto>>> GetByTeacherIdAsync(string teacherId)
+    {
+        var grades = await _studentGradeRepository.GetByTeacherIdAsync(teacherId);
+
+        var result = grades.Select(MapToListDto).ToList();
+
+        return Result<List<StudentGradeListDto>>.Success(result, "Öğretmene ait notlar başarıyla listelendi.");
     }
 
     public async Task<Result<List<StudentGradeListDto>>> GetByStudentIdAsync(string studentId)
@@ -65,19 +71,7 @@ public class StudentGradeService : IStudentGradeService
 
         var grades = await _studentGradeRepository.GetByStudentIdAsync(studentId);
 
-        var result = grades.Select(x => new StudentGradeListDto
-        {
-            Id = x.Id,
-            StudentId = x.StudentId,
-            LessonId = x.LessonId,
-            Exam1 = x.Exam1,
-            Exam2 = x.Exam2,
-            Project = x.Project,
-            Activity1 = x.Activity1,
-            Activity2 = x.Activity2,
-            Activity3 = x.Activity3,
-            IsActive = x.IsActive
-        }).ToList();
+        var result = grades.Select(MapToListDto).ToList();
 
         return Result<List<StudentGradeListDto>>.Success(result, "Öğrenciye ait notlar başarıyla listelendi.");
     }
@@ -91,19 +85,7 @@ public class StudentGradeService : IStudentGradeService
 
         var grades = await _studentGradeRepository.GetByLessonIdAsync(lessonId);
 
-        var result = grades.Select(x => new StudentGradeListDto
-        {
-            Id = x.Id,
-            StudentId = x.StudentId,
-            LessonId = x.LessonId,
-            Exam1 = x.Exam1,
-            Exam2 = x.Exam2,
-            Project = x.Project,
-            Activity1 = x.Activity1,
-            Activity2 = x.Activity2,
-            Activity3 = x.Activity3,
-            IsActive = x.IsActive
-        }).ToList();
+        var result = grades.Select(MapToListDto).ToList();
 
         return Result<List<StudentGradeListDto>>.Success(result, "Derse ait notlar başarıyla listelendi.");
     }
@@ -115,19 +97,7 @@ public class StudentGradeService : IStudentGradeService
         if (grade is null)
             return Result<StudentGradeListDto>.Failure("Not kaydı bulunamadı.", 404);
 
-        var result = new StudentGradeListDto
-        {
-            Id = grade.Id,
-            StudentId = grade.StudentId,
-            LessonId = grade.LessonId,
-            Exam1 = grade.Exam1,
-            Exam2 = grade.Exam2,
-            Project = grade.Project,
-            Activity1 = grade.Activity1,
-            Activity2 = grade.Activity2,
-            Activity3 = grade.Activity3,
-            IsActive = grade.IsActive
-        };
+        var result = MapToListDto(grade);
 
         return Result<StudentGradeListDto>.Success(result, "Not kaydı başarıyla getirildi.");
     }
@@ -169,8 +139,10 @@ public class StudentGradeService : IStudentGradeService
         if (teacherLesson is null)
             return Result.Failure("Bu öğretmen bu öğrenciye bu dersten not giremez.", 403);
 
-        var existingGrade = await _studentGradeRepository
-            .GetByStudentAndLessonAsync(dto.StudentId, dto.LessonId);
+        var existingGrade = await _studentGradeRepository.GetByStudentAndLessonAsync(
+            dto.StudentId,
+            dto.LessonId
+        );
 
         if (existingGrade is not null)
             return Result.Failure("Bu öğrenciye bu dersten zaten not girilmiş. Mevcut not kaydını güncelleyin.", 409);
@@ -270,5 +242,25 @@ public class StudentGradeService : IStudentGradeService
         await _studentGradeRepository.DeleteAsync(id);
 
         return Result.Success("Öğrenci notu başarıyla silindi.");
+    }
+
+    private static StudentGradeListDto MapToListDto(StudentGrade grade)
+    {
+        return new StudentGradeListDto
+        {
+            Id = grade.Id,
+            SchoolId = grade.SchoolId,
+            TeacherId = grade.TeacherId,
+            StudentId = grade.StudentId,
+            LessonId = grade.LessonId,
+            Exam1 = grade.Exam1,
+            Exam2 = grade.Exam2,
+            Project = grade.Project,
+            Activity1 = grade.Activity1,
+            Activity2 = grade.Activity2,
+            Activity3 = grade.Activity3,
+            Average = grade.Average,
+            IsActive = grade.IsActive
+        };
     }
 }

@@ -1,11 +1,13 @@
 ﻿using EduPulse.Business.Abstracts;
 using EduPulse.DTOs.Roles;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EduPulse.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize(Roles = "SuperAdmin")]
 public class RolesController : ControllerBase
 {
     private readonly IRoleService _roleService;

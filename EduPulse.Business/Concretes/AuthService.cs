@@ -15,19 +15,22 @@ public class AuthService : IAuthService
     private readonly IRoleRepository _roleRepository;
     private readonly IValidator<RegisterSchoolDto> _registerSchoolValidator;
     private readonly IValidator<LoginDto> _loginValidator;
+    private readonly IJwtService _jwtService;
 
     public AuthService(
         IUserRepository userRepository,
         ISchoolRepository schoolRepository,
         IRoleRepository roleRepository,
         IValidator<RegisterSchoolDto> registerSchoolValidator,
-        IValidator<LoginDto> loginValidator)
+        IValidator<LoginDto> loginValidator,
+        IJwtService jwtService)
     {
         _userRepository = userRepository;
         _schoolRepository = schoolRepository;
         _roleRepository = roleRepository;
         _registerSchoolValidator = registerSchoolValidator;
         _loginValidator = loginValidator;
+        _jwtService = jwtService;
     }
 
     public async Task<Result> RegisterSchoolAsync(RegisterSchoolDto dto)
@@ -96,11 +99,17 @@ public class AuthService : IAuthService
         if (user is null)
             return Result<LoginResponseDto>.Failure("Kullanıcı bulunamadı.", 404);
 
+        if (!user.IsActive)
+            return Result<LoginResponseDto>.Failure("Kullanıcı pasif durumda.", 403);
+
         if (!VerifyPassword(dto.Password, user.PasswordHash))
             return Result<LoginResponseDto>.Failure("Şifre hatalı.", 400);
 
+        var token = _jwtService.CreateToken(user);
+
         var response = new LoginResponseDto
         {
+            Token = token,
             Id = user.Id,
             FullName = user.FullName,
             Email = user.Email,

@@ -1,11 +1,13 @@
 ﻿using EduPulse.Entities.Classrooms;
 using EduPulse.Entities.Lessons;
 using EduPulse.Entities.Parents;
+using EduPulse.Entities.Roles;
 using EduPulse.Entities.Schools;
 using EduPulse.Entities.StudentGrades;
 using EduPulse.Entities.Students;
 using EduPulse.Entities.TeacherLessons;
 using EduPulse.Entities.Teachers;
+using EduPulse.Entities.Users;
 using EduPulse.Repository.Settings;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -23,6 +25,11 @@ public class MongoDbContext
 
         CreateIndexes();
     }
+    public IMongoCollection<Role> Roles =>
+    _database.GetCollection<Role>("Roles");
+
+    public IMongoCollection<User> Users =>
+    _database.GetCollection<User>("Users");
 
     public IMongoCollection<School> Schools =>
         _database.GetCollection<School>("Schools");
@@ -50,6 +57,7 @@ public class MongoDbContext
 
     private void CreateIndexes()
     {
+        CreateUserIndexes();
         CreateSchoolIndexes();
         CreateLessonIndexes();
         CreateTeacherIndexes();
@@ -58,6 +66,17 @@ public class MongoDbContext
         CreateParentIndexes();
         CreateTeacherLessonIndexes();
         CreateStudentGradeIndexes();
+    }
+
+    private void CreateUserIndexes()
+    {
+        Users.Indexes.CreateOne(new CreateIndexModel<User>(
+            Builders<User>.IndexKeys.Ascending(x => x.Email),
+            new CreateIndexOptions
+            {
+                Unique = true,
+                Name = "UX_Users_Email"
+            }));
     }
 
     private void CreateSchoolIndexes()
@@ -72,13 +91,13 @@ public class MongoDbContext
             }));
 
        Schools.Indexes.CreateOne(new CreateIndexModel<School>(
-       Builders<School>.IndexKeys.Ascending(x => x.PhoneNumber),
-       new CreateIndexOptions
-       {
-           Unique = true,
-           Sparse = true,
-           Name = "UX_Schools_PhoneNumber"
-       }));
+           Builders<School>.IndexKeys.Ascending(x => x.PhoneNumber),
+           new CreateIndexOptions
+           {
+               Unique = true,
+               Sparse = true,
+               Name = "UX_Schools_PhoneNumber"
+           }));
     }
 
     private void CreateLessonIndexes()

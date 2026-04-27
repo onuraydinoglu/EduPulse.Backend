@@ -2,6 +2,7 @@
 using EduPulse.DTOs.Common;
 using EduPulse.DTOs.Teachers;
 using EduPulse.Entities.Teachers;
+using EduPulse.Entities.Users;
 using EduPulse.Repository.Abstracts;
 using FluentValidation;
 
@@ -11,17 +12,23 @@ public class TeacherService : ITeacherService
 {
     private readonly ITeacherRepository _teacherRepository;
     private readonly ISchoolRepository _schoolRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IRoleRepository _roleRepository;
     private readonly IValidator<CreateTeacherDto> _createValidator;
     private readonly IValidator<UpdateTeacherDto> _updateValidator;
 
     public TeacherService(
         ITeacherRepository teacherRepository,
         ISchoolRepository schoolRepository,
+        IUserRepository userRepository,
+        IRoleRepository roleRepository,
         IValidator<CreateTeacherDto> createValidator,
         IValidator<UpdateTeacherDto> updateValidator)
     {
         _teacherRepository = teacherRepository;
         _schoolRepository = schoolRepository;
+        _userRepository = userRepository;
+        _roleRepository = roleRepository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
     }
@@ -97,6 +104,16 @@ public class TeacherService : ITeacherService
         if (school is null)
             return Result.Failure("Okul bulunamadı.", 404);
 
+        var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
+
+        if (existingUser is not null)
+            return Result.Failure("Bu e-posta adresi kullanıcı hesabı olarak zaten kayıtlı.", 400);
+
+        var role = await _roleRepository.GetByNameAsync("Teacher");
+
+        if (role is null)
+            return Result.Failure("Teacher rolü bulunamadı.", 500);
+
         var teacher = new Teacher
         {
             FirstName = dto.FirstName,
@@ -109,7 +126,21 @@ public class TeacherService : ITeacherService
 
         await _teacherRepository.CreateAsync(teacher);
 
-        return Result.Success("Öğretmen başarıyla oluşturuldu.", 201);
+        var user = new User
+        {
+            FullName = $"{teacher.FirstName} {teacher.LastName}",
+            Email = teacher.Email,
+            PasswordHash = HashPassword(dto.Password),
+            RoleId = role.Id,
+            RoleName = role.Name,
+            SchoolId = teacher.SchoolId,
+            TeacherId = teacher.Id,
+            IsActive = true
+        };
+
+        await _userRepository.CreateAsync(user);
+
+        return Result.Success("Öğretmen ve kullanıcı hesabı başarıyla oluşturuldu.", 201);
     }
 
     public async Task<Result> UpdateAsync(UpdateTeacherDto dto)
@@ -148,8 +179,18 @@ public class TeacherService : ITeacherService
         if (teacher is null)
             return Result.Failure("Öğretmen bulunamadı.", 404);
 
+        var user = await _userRepository.GetByEmailAsync(teacher.Email);
+
+        if (user is not null)
+            await _userRepository.DeleteAsync(user.Id);
+
         await _teacherRepository.DeleteAsync(id);
 
-        return Result.Success("Öğretmen başarıyla silindi.");
+        return Result.Success("Öğretmen ve kullanıcı hesabı silindi.");
+    }
+
+    private string HashPassword(string password)
+    {
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password));
     }
 }

@@ -24,6 +24,11 @@ public class SchoolRepository : ISchoolRepository
         return await _schools.Find(x => x.Id == id).FirstOrDefaultAsync();
     }
 
+    public async Task<School?> GetByEmailAsync(string email)
+    {
+        return await _schools.Find(x => x.Email == email).FirstOrDefaultAsync();
+    }
+
     public async Task CreateAsync(School school)
     {
         await _schools.InsertOneAsync(school);

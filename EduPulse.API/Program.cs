@@ -1,6 +1,7 @@
 using EduPulse.API.Middlewares;
 using EduPulse.Business.Abstracts;
 using EduPulse.Business.Concretes;
+using EduPulse.Business.Seeders;
 using EduPulse.Business.Validators.Students;
 using EduPulse.Repository.Abstracts;
 using EduPulse.Repository.Concretes;
@@ -15,6 +16,14 @@ builder.Services.Configure<MongoDbSettings>(
 );
 
 builder.Services.AddSingleton<MongoDbContext>();
+
+builder.Services.AddScoped<SuperAdminSeeder>();
+
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddScoped<ISchoolRepository, SchoolRepository>();
 builder.Services.AddScoped<ISchoolService, SchoolService>();
@@ -59,6 +68,12 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<SuperAdminSeeder>();
+    await seeder.SeedAsync();
+}
 
 app.UseMiddleware<GlobalExceptionMiddleware>();
 

@@ -31,7 +31,6 @@ public class UpdateSchoolDtoValidator : AbstractValidator<UpdateSchoolDto>
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("Telefon numarası boş olamaz.")
             .Matches(@"^0\d{10}$").WithMessage("Telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.");
     }
 }

@@ -36,10 +36,11 @@ public class SchoolService : ISchoolService
             Address = x.Address,
             Email = x.Email,
             PhoneNumber = x.PhoneNumber,
+            SchoolCode = x.SchoolCode,
             IsActive = x.IsActive
         }).ToList();
 
-        return Result<List<SchoolListDto>>.Success(result);
+        return Result<List<SchoolListDto>>.Success(result, "Okullar listelendi.");
     }
 
     public async Task<Result<SchoolListDto>> GetByIdAsync(string id)
@@ -58,10 +59,11 @@ public class SchoolService : ISchoolService
             Address = school.Address,
             Email = school.Email,
             PhoneNumber = school.PhoneNumber,
+            SchoolCode = school.SchoolCode,
             IsActive = school.IsActive
         };
 
-        return Result<SchoolListDto>.Success(result);
+        return Result<SchoolListDto>.Success(result, "Okul getirildi.");
     }
 
     public async Task<Result> CreateAsync(CreateSchoolDto dto)
@@ -71,14 +73,20 @@ public class SchoolService : ISchoolService
         if (!validationResult.IsValid)
             return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
+        var nameExists = await _schoolRepository.NameExistsAsync(dto.Name);
+
+        if (nameExists)
+            return Result.Failure("Bu okul adı zaten kayıtlı.", 400);
+
         var school = new School
         {
-            Name = dto.Name,
-            City = dto.City,
-            District = dto.District,
-            Address = dto.Address,
-            Email = dto.Email,
-            PhoneNumber = dto.PhoneNumber,
+            Name = dto.Name.Trim(),
+            City = dto.City.Trim(),
+            District = dto.District.Trim(),
+            Address = dto.Address.Trim(),
+            Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim(),
+            PhoneNumber = string.IsNullOrWhiteSpace(dto.PhoneNumber) ? null : dto.PhoneNumber.Trim(),
+            SchoolCode = await GenerateSchoolCodeAsync(),
             IsActive = true
         };
 
@@ -99,12 +107,17 @@ public class SchoolService : ISchoolService
         if (school is null)
             return Result.Failure("Okul bulunamadı.", 404);
 
-        school.Name = dto.Name;
-        school.City = dto.City;
-        school.District = dto.District;
-        school.Address = dto.Address;
-        school.Email = dto.Email;
-        school.PhoneNumber = dto.PhoneNumber;
+        var nameExists = await _schoolRepository.NameExistsForUpdateAsync(dto.Id, dto.Name);
+
+        if (nameExists)
+            return Result.Failure("Bu okul adı başka bir okulda kullanılıyor.", 400);
+
+        school.Name = dto.Name.Trim();
+        school.City = dto.City.Trim();
+        school.District = dto.District.Trim();
+        school.Address = dto.Address.Trim();
+        school.Email = string.IsNullOrWhiteSpace(dto.Email) ? null : dto.Email.Trim();
+        school.PhoneNumber = string.IsNullOrWhiteSpace(dto.PhoneNumber) ? null : dto.PhoneNumber.Trim();
         school.IsActive = dto.IsActive;
 
         await _schoolRepository.UpdateAsync(school);
@@ -122,5 +135,18 @@ public class SchoolService : ISchoolService
         await _schoolRepository.DeleteAsync(id);
 
         return Result.Success("Okul başarıyla silindi.");
+    }
+
+    private async Task<string> GenerateSchoolCodeAsync()
+    {
+        string code;
+
+        do
+        {
+            code = $"EDU-{Random.Shared.Next(100000, 999999)}";
+        }
+        while (await _schoolRepository.SchoolCodeExistsAsync(code));
+
+        return code;
     }
 }

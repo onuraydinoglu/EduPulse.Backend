@@ -128,13 +128,13 @@ public class TeacherService : ITeacherService
 
         var user = new User
         {
-            FullName = $"{teacher.FirstName} {teacher.LastName}",
+            FirstName = teacher.FirstName,
+            LastName = teacher.LastName,
             Email = teacher.Email,
             PasswordHash = HashPassword(dto.Password),
             RoleId = role.Id,
             RoleName = role.Name,
             SchoolId = teacher.SchoolId,
-            TeacherId = teacher.Id,
             IsActive = true
         };
 

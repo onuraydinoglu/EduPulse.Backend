@@ -15,13 +15,6 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-    [HttpPost("register-school")]
-    public async Task<IActionResult> RegisterSchool(RegisterSchoolDto dto)
-    {
-        var result = await _authService.RegisterSchoolAsync(dto);
-        return StatusCode(result.StatusCode, result);
-    }
-
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto dto)
     {

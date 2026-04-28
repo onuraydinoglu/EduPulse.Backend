@@ -1,0 +1,29 @@
+﻿using EduPulse.DTOs.Users;
+using FluentValidation;
+
+namespace EduPulse.Business.Validators.Users;
+
+public class CreateUserValidator : AbstractValidator<CreateUserDto>
+{
+    public CreateUserValidator()
+    {
+        RuleFor(x => x.FirstName)
+            .NotEmpty().WithMessage("Ad alanı boş bırakılamaz.")
+            .MinimumLength(2).WithMessage("Ad en az 2 karakter olmalıdır.");
+
+        RuleFor(x => x.LastName)
+            .NotEmpty().WithMessage("Soyad alanı boş bırakılamaz.")
+            .MinimumLength(2).WithMessage("Soyad en az 2 karakter olmalıdır.");
+
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email alanı boş bırakılamaz.")
+            .EmailAddress().WithMessage("Geçerli bir email adresi giriniz.");
+
+        RuleFor(x => x.Password)
+            .NotEmpty().WithMessage("Şifre alanı boş bırakılamaz.")
+            .MinimumLength(6).WithMessage("Şifre en az 6 karakter olmalıdır.");
+
+        RuleFor(x => x.RoleId)
+            .NotEmpty().WithMessage("Rol seçilmelidir.");
+    }
+}

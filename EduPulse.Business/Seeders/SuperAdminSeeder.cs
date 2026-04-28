@@ -32,26 +32,42 @@ public class SuperAdminSeeder
             await _roleRepository.CreateAsync(role);
         }
 
-        var admin = await _userRepository.GetByEmailAsync("admin@edupulse.com");
-
-        if (admin is null)
+        var admins = new List<User>
         {
-            var user = new User
+            new User
             {
-                FullName = "Super Admin",
-                Email = "admin@edupulse.com",
-                PasswordHash = HashPassword("123456"),
+                FirstName = "Onur",
+                LastName = "Aydınoğlu",
+                Email = "onur@gmail.com",
+                PhoneNumber = "05456565712",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
                 RoleId = role.Id,
                 RoleName = role.Name,
+                SchoolId = null,
                 IsActive = true
-            };
+            },
+            new User
+            {
+                FirstName = "Nisa",
+                LastName = "Işık",
+                Email = "nisa@gmail.com",
+                PhoneNumber = "05308414903",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
+                RoleId = role.Id,
+                RoleName = role.Name,
+                SchoolId = null,
+                IsActive = true
+            }
+        };
 
-            await _userRepository.CreateAsync(user);
+        foreach (var user in admins)
+        {
+            var existingUser = await _userRepository.GetByEmailAsync(user.Email);
+
+            if (existingUser is null)
+            {
+                await _userRepository.CreateAsync(user);
+            }
         }
-    }
-
-    private string HashPassword(string password)
-    {
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(password));
     }
 }

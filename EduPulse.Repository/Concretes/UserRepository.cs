@@ -29,6 +29,11 @@ public class UserRepository : IUserRepository
         return await _users.Find(x => x.Email == email).FirstOrDefaultAsync();
     }
 
+    public async Task<List<User>> GetBySchoolIdAsync(string schoolId)
+    {
+        return await _users.Find(x => x.SchoolId == schoolId).ToListAsync();
+    }
+
     public async Task CreateAsync(User user)
     {
         await _users.InsertOneAsync(user);
@@ -36,7 +41,6 @@ public class UserRepository : IUserRepository
 
     public async Task UpdateAsync(User user)
     {
-        user.UpdatedDate = DateTime.UtcNow;
         await _users.ReplaceOneAsync(x => x.Id == user.Id, user);
     }
 

@@ -26,12 +26,12 @@ public class UpdateSchoolDtoValidator : AbstractValidator<UpdateSchoolDto>
             .NotEmpty().WithMessage("Adres boş olamaz.")
             .MaximumLength(250).WithMessage("Adres en fazla 250 karakter olabilir.");
 
-        RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("Telefon numarası boş olamaz.")
-            .Matches(@"^0\d{10}$").WithMessage("Telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.");
-
         RuleFor(x => x.Email)
             .EmailAddress().WithMessage("Geçerli bir email giriniz.")
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
+
+        RuleFor(x => x.PhoneNumber)
+            .NotEmpty().WithMessage("Telefon numarası boş olamaz.")
+            .Matches(@"^0\d{10}$").WithMessage("Telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.");
     }
 }

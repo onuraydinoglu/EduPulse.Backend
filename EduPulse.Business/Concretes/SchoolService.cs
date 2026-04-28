@@ -34,13 +34,12 @@ public class SchoolService : ISchoolService
             City = x.City,
             District = x.District,
             Address = x.Address,
-            PhoneNumber = x.PhoneNumber,
             Email = x.Email,
-            PrincipalName = x.PrincipalName,
+            PhoneNumber = x.PhoneNumber,
             IsActive = x.IsActive
         }).ToList();
 
-        return Result<List<SchoolListDto>>.Success(result, "Okullar başarıyla listelendi.");
+        return Result<List<SchoolListDto>>.Success(result);
     }
 
     public async Task<Result<SchoolListDto>> GetByIdAsync(string id)
@@ -57,13 +56,12 @@ public class SchoolService : ISchoolService
             City = school.City,
             District = school.District,
             Address = school.Address,
-            PhoneNumber = school.PhoneNumber,
             Email = school.Email,
-            PrincipalName = school.PrincipalName,
+            PhoneNumber = school.PhoneNumber,
             IsActive = school.IsActive
         };
 
-        return Result<SchoolListDto>.Success(result, "Okul başarıyla getirildi.");
+        return Result<SchoolListDto>.Success(result);
     }
 
     public async Task<Result> CreateAsync(CreateSchoolDto dto)
@@ -79,15 +77,14 @@ public class SchoolService : ISchoolService
             City = dto.City,
             District = dto.District,
             Address = dto.Address,
-            PhoneNumber = dto.PhoneNumber,
             Email = dto.Email,
-            PrincipalName = dto.PrincipalName,
+            PhoneNumber = dto.PhoneNumber,
             IsActive = true
         };
 
         await _schoolRepository.CreateAsync(school);
 
-        return Result.Success("Okul başarıyla oluşturuldu.", 201);
+        return Result.Success("Okul başarıyla oluşturuldu.");
     }
 
     public async Task<Result> UpdateAsync(UpdateSchoolDto dto)
@@ -106,9 +103,8 @@ public class SchoolService : ISchoolService
         school.City = dto.City;
         school.District = dto.District;
         school.Address = dto.Address;
-        school.PhoneNumber = dto.PhoneNumber;
         school.Email = dto.Email;
-        school.PrincipalName = dto.PrincipalName;
+        school.PhoneNumber = dto.PhoneNumber;
         school.IsActive = dto.IsActive;
 
         await _schoolRepository.UpdateAsync(school);

@@ -1,10 +1,10 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using EduPulse.Business.Abstracts;
+﻿using EduPulse.Business.Abstracts;
 using EduPulse.Entities.Users;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace EduPulse.Business.Concretes;
 
@@ -19,28 +19,19 @@ public class JwtService : IJwtService
 
     public string CreateToken(User user)
     {
-        var jwtSettings = _configuration.GetSection("JwtSettings");
-
-        var secretKey = jwtSettings["SecretKey"]!;
-        var issuer = jwtSettings["Issuer"]!;
-        var audience = jwtSettings["Audience"]!;
-        var expireMinutes = Convert.ToInt32(jwtSettings["ExpireMinutes"]);
-
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.FullName),
+            new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Role, user.RoleName),
-
             new Claim("roleId", user.RoleId),
-            new Claim("schoolId", user.SchoolId ?? ""),
-            new Claim("teacherId", user.TeacherId ?? ""),
-            new Claim("studentId", user.StudentId ?? ""),
-            new Claim("parentId", user.ParentId ?? "")
+            new Claim("schoolId", user.SchoolId ?? "")
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]!)
+        );
 
         var credentials = new SigningCredentials(
             key,
@@ -48,10 +39,12 @@ public class JwtService : IJwtService
         );
 
         var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
+            issuer: _configuration["JwtSettings:Issuer"],
+            audience: _configuration["JwtSettings:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(expireMinutes),
+            expires: DateTime.Now.AddMinutes(
+                Convert.ToDouble(_configuration["JwtSettings:ExpireMinutes"])
+            ),
             signingCredentials: credentials
         );
 

@@ -1,6 +1,6 @@
-﻿namespace EduPulse.DTOs.Auth;
+﻿namespace EduPulse.DTOs.Users;
 
-public class LoginResponseDto
+public class UserListDto
 {
     public string Id { get; set; } = null!;
 
@@ -16,5 +16,5 @@ public class LoginResponseDto
 
     public string? SchoolId { get; set; }
 
-    public string Token { get; set; } = null!;
+    public bool IsActive { get; set; }
 }

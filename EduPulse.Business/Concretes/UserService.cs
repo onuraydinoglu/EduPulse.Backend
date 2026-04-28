@@ -114,6 +114,55 @@ public class UserService : IUserService
         return Result<List<UserListDto>>.Success(result);
     }
 
+    public async Task<Result<List<UserListDto>>> GetAllForCurrentUserAsync(
+        string? currentRoleName,
+        string? currentSchoolId)
+    {
+        currentRoleName = currentRoleName?.Trim().ToLower();
+
+        if (currentRoleName == "superadmin")
+            return await GetAllAsync();
+
+        if (currentRoleName == "schooladmin")
+        {
+            if (string.IsNullOrWhiteSpace(currentSchoolId))
+                return Result<List<UserListDto>>.Failure("Okul bilgisi bulunamadı.", 403);
+
+            return await GetBySchoolIdAsync(currentSchoolId);
+        }
+
+        return Result<List<UserListDto>>.Failure("Bu işlem için yetkiniz yok.", 403);
+    }
+
+    public async Task<Result<UserListDto>> GetByIdForCurrentUserAsync(
+        string id,
+        string? currentRoleName,
+        string? currentSchoolId)
+    {
+        currentRoleName = currentRoleName?.Trim().ToLower();
+
+        var user = await _userRepository.GetByIdAsync(id);
+
+        if (user is null)
+            return Result<UserListDto>.Failure("Kullanıcı bulunamadı.", 404);
+
+        if (currentRoleName == "superadmin")
+            return Result<UserListDto>.Success(MapToListDto(user));
+
+        if (currentRoleName == "schooladmin")
+        {
+            if (string.IsNullOrWhiteSpace(currentSchoolId))
+                return Result<UserListDto>.Failure("Okul bilgisi bulunamadı.", 403);
+
+            if (user.SchoolId != currentSchoolId)
+                return Result<UserListDto>.Failure("Bu kullanıcıya erişim yetkiniz yok.", 403);
+
+            return Result<UserListDto>.Success(MapToListDto(user));
+        }
+
+        return Result<UserListDto>.Failure("Bu işlem için yetkiniz yok.", 403);
+    }
+
     public async Task<Result> CreateUserAsync(CreateUserDto dto, string? schoolId, string roleName)
     {
         var validationResult = await _createValidator.ValidateAsync(dto);
@@ -170,6 +219,62 @@ public class UserService : IUserService
         await _userRepository.CreateAsync(user);
 
         return Result.Success($"Kullanıcı başarıyla oluşturuldu. Geçici şifre: {temporaryPassword}");
+    }
+
+    public async Task<Result> UpdateForCurrentUserAsync(
+        UpdateUserDto dto,
+        string? currentRoleName,
+        string? currentSchoolId)
+    {
+        currentRoleName = currentRoleName?.Trim().ToLower();
+
+        var user = await _userRepository.GetByIdAsync(dto.Id);
+
+        if (user is null)
+            return Result.Failure("Kullanıcı bulunamadı.", 404);
+
+        if (currentRoleName == "schooladmin")
+        {
+            if (string.IsNullOrWhiteSpace(currentSchoolId))
+                return Result.Failure("Okul bilgisi bulunamadı.", 403);
+
+            if (user.SchoolId != currentSchoolId)
+                return Result.Failure("Bu kullanıcıyı güncelleme yetkiniz yok.", 403);
+        }
+        else if (currentRoleName != "superadmin")
+        {
+            return Result.Failure("Bu işlem için yetkiniz yok.", 403);
+        }
+
+        return await UpdateAsync(dto);
+    }
+
+    public async Task<Result> DeleteForCurrentUserAsync(
+        string id,
+        string? currentRoleName,
+        string? currentSchoolId)
+    {
+        currentRoleName = currentRoleName?.Trim().ToLower();
+
+        var user = await _userRepository.GetByIdAsync(id);
+
+        if (user is null)
+            return Result.Failure("Kullanıcı bulunamadı.", 404);
+
+        if (currentRoleName == "schooladmin")
+        {
+            if (string.IsNullOrWhiteSpace(currentSchoolId))
+                return Result.Failure("Okul bilgisi bulunamadı.", 403);
+
+            if (user.SchoolId != currentSchoolId)
+                return Result.Failure("Bu kullanıcıyı silme yetkiniz yok.", 403);
+        }
+        else if (currentRoleName != "superadmin")
+        {
+            return Result.Failure("Bu işlem için yetkiniz yok.", 403);
+        }
+
+        return await DeleteAsync(id);
     }
 
     public async Task<Result> UpdateAsync(UpdateUserDto dto)

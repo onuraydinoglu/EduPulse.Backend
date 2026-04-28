@@ -18,37 +18,32 @@ public class UsersController : ControllerBase
         _userService = userService;
     }
 
+    private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
+    private string? SchoolId => User.FindFirst("schoolId")?.Value;
+
     [HttpGet]
     [Authorize(Roles = "superadmin,schooladmin")]
     public async Task<IActionResult> GetAll()
     {
-        var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
-        var schoolId = User.FindFirst("schoolId")?.Value;
+        var result = await _userService.GetAllForCurrentUserAsync(RoleName, SchoolId);
+        return StatusCode(result.StatusCode, result);
+    }
 
-        if (roleName == "superadmin")
-        {
-            var allResult = await _userService.GetAllAsync();
-            return StatusCode(allResult.StatusCode, allResult);
-        }
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return BadRequest("Okul bilgisi bulunamadı.");
-
-        var schoolResult = await _userService.GetBySchoolIdAsync(schoolId);
-        return StatusCode(schoolResult.StatusCode, schoolResult);
+    [HttpGet("{id}")]
+    [Authorize(Roles = "superadmin,schooladmin")]
+    public async Task<IActionResult> GetById(string id)
+    {
+        var result = await _userService.GetByIdForCurrentUserAsync(id, RoleName, SchoolId);
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("teachers")]
     [Authorize(Roles = "superadmin,schooladmin")]
     public async Task<IActionResult> GetTeachers()
     {
-        var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
-        var schoolId = User.FindFirst("schoolId")?.Value;
+        var schoolId = RoleName == "superadmin" ? null : SchoolId;
 
-        var result = roleName == "superadmin"
-            ? await _userService.GetTeachersAsync(null)
-            : await _userService.GetTeachersAsync(schoolId);
-
+        var result = await _userService.GetTeachersAsync(schoolId);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -56,27 +51,9 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "superadmin,schooladmin")]
     public async Task<IActionResult> GetOfficers()
     {
-        var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
-        var schoolId = User.FindFirst("schoolId")?.Value;
+        var schoolId = RoleName == "superadmin" ? null : SchoolId;
 
-        var result = roleName == "superadmin"
-            ? await _userService.GetOfficersAsync(null)
-            : await _userService.GetOfficersAsync(schoolId);
-
-        return StatusCode(result.StatusCode, result);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(string id)
-    {
-        var result = await _userService.GetByIdAsync(id);
-        return StatusCode(result.StatusCode, result);
-    }
-
-    [HttpGet("school/{schoolId}")]
-    public async Task<IActionResult> GetBySchoolId(string schoolId)
-    {
-        var result = await _userService.GetBySchoolIdAsync(schoolId);
+        var result = await _userService.GetOfficersAsync(schoolId);
         return StatusCode(result.StatusCode, result);
     }
 
@@ -84,10 +61,7 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> CreateTeacher(CreateUserDto dto)
     {
-        var schoolId = User.FindFirst("schoolId")?.Value;
-
-        var result = await _userService.CreateUserAsync(dto, schoolId, "teacher");
-
+        var result = await _userService.CreateUserAsync(dto, SchoolId, "teacher");
         return StatusCode(result.StatusCode, result);
     }
 
@@ -95,24 +69,23 @@ public class UsersController : ControllerBase
     [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> CreateOfficer(CreateUserDto dto)
     {
-        var schoolId = User.FindFirst("schoolId")?.Value;
-
-        var result = await _userService.CreateUserAsync(dto, schoolId, "officer");
-
+        var result = await _userService.CreateUserAsync(dto, SchoolId, "officer");
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut]
+    [Authorize(Roles = "superadmin,schooladmin")]
     public async Task<IActionResult> Update(UpdateUserDto dto)
     {
-        var result = await _userService.UpdateAsync(dto);
+        var result = await _userService.UpdateForCurrentUserAsync(dto, RoleName, SchoolId);
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "superadmin,schooladmin")]
     public async Task<IActionResult> Delete(string id)
     {
-        var result = await _userService.DeleteAsync(id);
+        var result = await _userService.DeleteForCurrentUserAsync(id, RoleName, SchoolId);
         return StatusCode(result.StatusCode, result);
     }
 }

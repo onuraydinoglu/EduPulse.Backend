@@ -9,8 +9,10 @@ public interface IUserService
     Task<Result<UserListDto>> GetByIdAsync(string id);
     Task<Result<List<UserListDto>>> GetBySchoolIdAsync(string schoolId);
 
-    Task<Result> CreateUserAsync(CreateUserDto dto, string? schoolId, string roleName);
+    Task<Result<List<UserListDto>>> GetTeachersAsync(string? schoolId);
+    Task<Result<List<UserListDto>>> GetOfficersAsync(string? schoolId);
 
+    Task<Result> CreateUserAsync(CreateUserDto dto, string? schoolId, string roleName);
     Task<Result> UpdateAsync(UpdateUserDto dto);
     Task<Result> DeleteAsync(string id);
 }

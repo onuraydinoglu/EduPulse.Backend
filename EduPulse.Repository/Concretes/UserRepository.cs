@@ -34,10 +34,24 @@ public class UserRepository : IUserRepository
         return await _users.Find(x => x.SchoolId == schoolId).ToListAsync();
     }
 
+    public async Task<List<User>> GetByRoleNameAsync(string roleName)
+    {
+        return await _users
+            .Find(x => x.RoleName == roleName)
+            .ToListAsync();
+    }
+
+    public async Task<List<User>> GetBySchoolIdAndRoleNameAsync(string schoolId, string roleName)
+    {
+        return await _users
+            .Find(x => x.SchoolId == schoolId && x.RoleName == roleName)
+            .ToListAsync();
+    }
+
     public async Task<bool> ExistsSchoolAdminAsync(string schoolId)
     {
         return await _users
-            .Find(x => x.SchoolId == schoolId && x.RoleName.ToLower() == "schooladmin")
+            .Find(x => x.SchoolId == schoolId && x.RoleName == "schooladmin")
             .AnyAsync();
     }
 

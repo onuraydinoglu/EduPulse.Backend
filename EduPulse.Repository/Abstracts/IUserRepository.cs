@@ -9,6 +9,9 @@ public interface IUserRepository
     Task<User?> GetByEmailAsync(string email);
     Task<List<User>> GetBySchoolIdAsync(string schoolId);
 
+    Task<List<User>> GetByRoleNameAsync(string roleName);
+    Task<List<User>> GetBySchoolIdAndRoleNameAsync(string schoolId, string roleName);
+
     Task<bool> ExistsSchoolAdminAsync(string schoolId);
 
     Task CreateAsync(User user);

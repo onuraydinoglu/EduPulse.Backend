@@ -31,8 +31,39 @@ public class UsersController : ControllerBase
             return StatusCode(allResult.StatusCode, allResult);
         }
 
-        var schoolResult = await _userService.GetBySchoolIdAsync(schoolId!);
+        if (string.IsNullOrWhiteSpace(schoolId))
+            return BadRequest("Okul bilgisi bulunamadı.");
+
+        var schoolResult = await _userService.GetBySchoolIdAsync(schoolId);
         return StatusCode(schoolResult.StatusCode, schoolResult);
+    }
+
+    [HttpGet("teachers")]
+    [Authorize(Roles = "superadmin,schooladmin")]
+    public async Task<IActionResult> GetTeachers()
+    {
+        var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = roleName == "superadmin"
+            ? await _userService.GetTeachersAsync(null)
+            : await _userService.GetTeachersAsync(schoolId);
+
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpGet("officers")]
+    [Authorize(Roles = "superadmin,schooladmin")]
+    public async Task<IActionResult> GetOfficers()
+    {
+        var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = roleName == "superadmin"
+            ? await _userService.GetOfficersAsync(null)
+            : await _userService.GetOfficersAsync(schoolId);
+
+        return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{id}")]

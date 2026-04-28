@@ -46,34 +46,9 @@ public class UserService : IUserService
         return $"{normalizedFirstName}{randomNumber}";
     }
 
-    public async Task<Result<List<UserListDto>>> GetAllAsync()
+    private static UserListDto MapToListDto(User user)
     {
-        var users = await _userRepository.GetAllAsync();
-
-        var result = users.Select(x => new UserListDto
-        {
-            Id = x.Id,
-            FirstName = x.FirstName,
-            LastName = x.LastName,
-            Email = x.Email,
-            PhoneNumber = x.PhoneNumber,
-            RoleId = x.RoleId,
-            RoleName = x.RoleName,
-            SchoolId = x.SchoolId,
-            IsActive = x.IsActive
-        }).ToList();
-
-        return Result<List<UserListDto>>.Success(result);
-    }
-
-    public async Task<Result<UserListDto>> GetByIdAsync(string id)
-    {
-        var user = await _userRepository.GetByIdAsync(id);
-
-        if (user is null)
-            return Result<UserListDto>.Failure("Kullanıcı bulunamadı.", 404);
-
-        var result = new UserListDto
+        return new UserListDto
         {
             Id = user.Id,
             FirstName = user.FirstName,
@@ -85,6 +60,25 @@ public class UserService : IUserService
             SchoolId = user.SchoolId,
             IsActive = user.IsActive
         };
+    }
+
+    public async Task<Result<List<UserListDto>>> GetAllAsync()
+    {
+        var users = await _userRepository.GetAllAsync();
+
+        var result = users.Select(MapToListDto).ToList();
+
+        return Result<List<UserListDto>>.Success(result);
+    }
+
+    public async Task<Result<UserListDto>> GetByIdAsync(string id)
+    {
+        var user = await _userRepository.GetByIdAsync(id);
+
+        if (user is null)
+            return Result<UserListDto>.Failure("Kullanıcı bulunamadı.", 404);
+
+        var result = MapToListDto(user);
 
         return Result<UserListDto>.Success(result);
     }
@@ -93,18 +87,29 @@ public class UserService : IUserService
     {
         var users = await _userRepository.GetBySchoolIdAsync(schoolId);
 
-        var result = users.Select(x => new UserListDto
-        {
-            Id = x.Id,
-            FirstName = x.FirstName,
-            LastName = x.LastName,
-            Email = x.Email,
-            PhoneNumber = x.PhoneNumber,
-            RoleId = x.RoleId,
-            RoleName = x.RoleName,
-            SchoolId = x.SchoolId,
-            IsActive = x.IsActive
-        }).ToList();
+        var result = users.Select(MapToListDto).ToList();
+
+        return Result<List<UserListDto>>.Success(result);
+    }
+
+    public async Task<Result<List<UserListDto>>> GetTeachersAsync(string? schoolId)
+    {
+        var users = string.IsNullOrWhiteSpace(schoolId)
+            ? await _userRepository.GetByRoleNameAsync("teacher")
+            : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "teacher");
+
+        var result = users.Select(MapToListDto).ToList();
+
+        return Result<List<UserListDto>>.Success(result);
+    }
+
+    public async Task<Result<List<UserListDto>>> GetOfficersAsync(string? schoolId)
+    {
+        var users = string.IsNullOrWhiteSpace(schoolId)
+            ? await _userRepository.GetByRoleNameAsync("officer")
+            : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "officer");
+
+        var result = users.Select(MapToListDto).ToList();
 
         return Result<List<UserListDto>>.Success(result);
     }

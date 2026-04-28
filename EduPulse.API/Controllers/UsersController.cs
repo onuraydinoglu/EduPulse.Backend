@@ -49,13 +49,25 @@ public class UsersController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
-    [HttpPost]
+    [HttpPost("teacher")]
     [Authorize(Roles = "schooladmin")]
-    public async Task<IActionResult> Create(CreateUserDto dto)
+    public async Task<IActionResult> CreateTeacher(CreateUserDto dto)
     {
         var schoolId = User.FindFirst("schoolId")?.Value;
 
-        var result = await _userService.CreateUserAsync(dto, schoolId);
+        var result = await _userService.CreateUserAsync(dto, schoolId, "teacher");
+
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPost("officer")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> CreateOfficer(CreateUserDto dto)
+    {
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = await _userService.CreateUserAsync(dto, schoolId, "officer");
+
         return StatusCode(result.StatusCode, result);
     }
 

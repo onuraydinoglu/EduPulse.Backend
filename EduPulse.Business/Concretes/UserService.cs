@@ -29,6 +29,23 @@ public class UserService : IUserService
         _updateValidator = updateValidator;
     }
 
+    private static string GenerateTemporaryPassword(string firstName)
+    {
+        var normalizedFirstName = firstName
+            .Trim()
+            .ToLower()
+            .Replace("ı", "i")
+            .Replace("ğ", "g")
+            .Replace("ü", "u")
+            .Replace("ş", "s")
+            .Replace("ö", "o")
+            .Replace("ç", "c");
+
+        var randomNumber = Random.Shared.Next(1000, 10000);
+
+        return $"{normalizedFirstName}{randomNumber}";
+    }
+
     public async Task<Result<List<UserListDto>>> GetAllAsync()
     {
         var users = await _userRepository.GetAllAsync();
@@ -92,7 +109,7 @@ public class UserService : IUserService
         return Result<List<UserListDto>>.Success(result);
     }
 
-    public async Task<Result> CreateUserAsync(CreateUserDto dto, string? schoolId)
+    public async Task<Result> CreateUserAsync(CreateUserDto dto, string? schoolId, string roleName)
     {
         var validationResult = await _createValidator.ValidateAsync(dto);
 
@@ -102,10 +119,10 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(schoolId))
             return Result.Failure("Okul bilgisi bulunamadı.", 403);
 
-        if (string.IsNullOrWhiteSpace(dto.RoleName))
-            return Result.Failure("Rol boş olamaz.", 400);
+        if (string.IsNullOrWhiteSpace(roleName))
+            return Result.Failure("Rol bilgisi bulunamadı.", 400);
 
-        var requestedRoleName = dto.RoleName.Trim().ToLower();
+        var requestedRoleName = roleName.Trim().ToLower();
 
         var forbiddenRoles = new[] { "superadmin", "schooladmin" };
 
@@ -130,24 +147,24 @@ public class UserService : IUserService
         if (role is null)
             return Result.Failure("Rol bulunamadı.", 404);
 
+        var temporaryPassword = GenerateTemporaryPassword(dto.FirstName);
+
         var user = new User
         {
             FirstName = dto.FirstName.Trim(),
             LastName = dto.LastName.Trim(),
             Email = dto.Email.Trim(),
             PhoneNumber = dto.PhoneNumber.Trim(),
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(temporaryPassword),
             RoleId = role.Id,
             RoleName = role.Name,
-
             SchoolId = school.Id,
             IsActive = true
         };
 
         await _userRepository.CreateAsync(user);
 
-        return Result.Success("Kullanıcı başarıyla oluşturuldu.");
+        return Result.Success($"Kullanıcı başarıyla oluşturuldu. Geçici şifre: {temporaryPassword}");
     }
 
     public async Task<Result> UpdateAsync(UpdateUserDto dto)

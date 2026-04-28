@@ -23,7 +23,7 @@ public class CreateUserValidator : AbstractValidator<CreateUserDto>
             .NotEmpty().WithMessage("Şifre alanı boş bırakılamaz.")
             .MinimumLength(6).WithMessage("Şifre en az 6 karakter olmalıdır.");
 
-        RuleFor(x => x.RoleId)
-            .NotEmpty().WithMessage("Rol seçilmelidir.");
+        RuleFor(x => x.PhoneNumber)
+            .Matches(@"^0\d{10}$").WithMessage("Telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.");
     }
 }

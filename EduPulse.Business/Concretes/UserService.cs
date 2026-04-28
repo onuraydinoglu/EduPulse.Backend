@@ -92,41 +92,56 @@ public class UserService : IUserService
         return Result<List<UserListDto>>.Success(result);
     }
 
-    public async Task<Result> CreateAsync(CreateUserDto dto)
+    public async Task<Result> CreateUserAsync(CreateUserDto dto, string? schoolId)
     {
         var validationResult = await _createValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
             return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
-        var existingUser = await _userRepository.GetByEmailAsync(dto.Email);
+        if (string.IsNullOrWhiteSpace(schoolId))
+            return Result.Failure("Okul bilgisi bulunamadı.", 403);
+
+        if (string.IsNullOrWhiteSpace(dto.RoleName))
+            return Result.Failure("Rol boş olamaz.", 400);
+
+        var requestedRoleName = dto.RoleName.Trim().ToLower();
+
+        var forbiddenRoles = new[] { "superadmin", "schooladmin" };
+
+        if (forbiddenRoles.Contains(requestedRoleName))
+            return Result.Failure("Bu rol atanamaz.", 400);
+
+        var school = await _schoolRepository.GetByIdAsync(schoolId);
+
+        if (school is null)
+            return Result.Failure("Okul bulunamadı.", 404);
+
+        if (!school.IsActive)
+            return Result.Failure("Okul aktif değil.", 400);
+
+        var existingUser = await _userRepository.GetByEmailAsync(dto.Email.Trim());
 
         if (existingUser is not null)
             return Result.Failure("Bu email adresi zaten kullanılıyor.", 400);
 
-        var role = await _roleRepository.GetByIdAsync(dto.RoleId);
+        var role = await _roleRepository.GetByNameAsync(requestedRoleName);
 
         if (role is null)
             return Result.Failure("Rol bulunamadı.", 404);
 
-        if (!string.IsNullOrWhiteSpace(dto.SchoolId))
-        {
-            var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
-
-            if (school is null)
-                return Result.Failure("Okul bulunamadı.", 404);
-        }
-
         var user = new User
         {
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Email = dto.Email,
+            FirstName = dto.FirstName.Trim(),
+            LastName = dto.LastName.Trim(),
+            Email = dto.Email.Trim(),
+            PhoneNumber = dto.PhoneNumber.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-            PhoneNumber = dto.PhoneNumber,
+
             RoleId = role.Id,
             RoleName = role.Name,
-            SchoolId = dto.SchoolId,
+
+            SchoolId = school.Id,
             IsActive = true
         };
 
@@ -147,26 +162,10 @@ public class UserService : IUserService
         if (user is null)
             return Result.Failure("Kullanıcı bulunamadı.", 404);
 
-        var role = await _roleRepository.GetByIdAsync(dto.RoleId);
-
-        if (role is null)
-            return Result.Failure("Rol bulunamadı.", 404);
-
-        if (!string.IsNullOrWhiteSpace(dto.SchoolId))
-        {
-            var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
-
-            if (school is null)
-                return Result.Failure("Okul bulunamadı.", 404);
-        }
-
-        user.FirstName = dto.FirstName;
-        user.LastName = dto.LastName;
-        user.Email = dto.Email;
-        user.PhoneNumber = dto.PhoneNumber;
-        user.RoleId = role.Id;
-        user.RoleName = role.Name;
-        user.SchoolId = dto.SchoolId;
+        user.FirstName = dto.FirstName.Trim();
+        user.LastName = dto.LastName.Trim();
+        user.Email = dto.Email.Trim();
+        user.PhoneNumber = dto.PhoneNumber.Trim();
         user.IsActive = dto.IsActive;
 
         await _userRepository.UpdateAsync(user);

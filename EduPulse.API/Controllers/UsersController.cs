@@ -1,11 +1,14 @@
 ﻿using EduPulse.Business.Abstracts;
 using EduPulse.DTOs.Users;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EduPulse.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -16,10 +19,20 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "superadmin,schooladmin")]
     public async Task<IActionResult> GetAll()
     {
-        var result = await _userService.GetAllAsync();
-        return StatusCode(result.StatusCode, result);
+        var roleName = User.FindFirst(ClaimTypes.Role)?.Value;
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        if (roleName == "superadmin")
+        {
+            var allResult = await _userService.GetAllAsync();
+            return StatusCode(allResult.StatusCode, allResult);
+        }
+
+        var schoolResult = await _userService.GetBySchoolIdAsync(schoolId!);
+        return StatusCode(schoolResult.StatusCode, schoolResult);
     }
 
     [HttpGet("{id}")]
@@ -37,9 +50,12 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> Create(CreateUserDto dto)
     {
-        var result = await _userService.CreateAsync(dto);
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = await _userService.CreateUserAsync(dto, schoolId);
         return StatusCode(result.StatusCode, result);
     }
 

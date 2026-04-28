@@ -9,6 +9,5 @@ public class CreateUserDto
     public string Password { get; set; } = null!;
     public string PhoneNumber { get; set; } = null!;
 
-    public string RoleId { get; set; } = null!;
-    public string? SchoolId { get; set; }
+    public string RoleName { get; set; } = null!;
 }

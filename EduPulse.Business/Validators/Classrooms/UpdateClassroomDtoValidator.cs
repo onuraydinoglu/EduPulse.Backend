@@ -10,13 +10,11 @@ public class UpdateClassroomDtoValidator : AbstractValidator<UpdateClassroomDto>
         RuleFor(x => x.Id)
             .NotEmpty().WithMessage("Sınıf Id boş olamaz.");
 
-        RuleFor(x => x.SchoolId)
-            .NotEmpty().WithMessage("Okul seçilmelidir.");
-
         RuleFor(x => x.Grade)
-            .NotEmpty().WithMessage("Sınıf seviyesi boş olamaz.");
+            .GreaterThan(0).WithMessage("Sınıf seviyesi geçerli olmalıdır.");
 
         RuleFor(x => x.Section)
-            .NotEmpty().WithMessage("Şube boş olamaz.");
+            .NotEmpty().WithMessage("Şube boş olamaz.")
+            .MaximumLength(10).WithMessage("Şube en fazla 10 karakter olabilir.");
     }
 }

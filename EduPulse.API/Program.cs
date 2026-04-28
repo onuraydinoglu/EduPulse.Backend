@@ -34,14 +34,14 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ISchoolRepository, SchoolRepository>();
 builder.Services.AddScoped<ISchoolService, SchoolService>();
 
+builder.Services.AddScoped<IClassroomRepository, ClassroomRepository>();
+builder.Services.AddScoped<IClassroomService, ClassroomService>();
+
 builder.Services.AddScoped<ILessonRepository, LessonRepository>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 
 builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
 builder.Services.AddScoped<ITeacherService, TeacherService>();
-
-builder.Services.AddScoped<IClassroomRepository, ClassroomRepository>();
-builder.Services.AddScoped<IClassroomService, ClassroomService>();
 
 builder.Services.AddScoped<ITeacherLessonRepository, TeacherLessonRepository>();
 builder.Services.AddScoped<ITeacherLessonService, TeacherLessonService>();

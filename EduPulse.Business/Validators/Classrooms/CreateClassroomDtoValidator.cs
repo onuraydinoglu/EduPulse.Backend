@@ -7,14 +7,11 @@ public class CreateClassroomDtoValidator : AbstractValidator<CreateClassroomDto>
 {
     public CreateClassroomDtoValidator()
     {
-        RuleFor(x => x.SchoolId)
-            .NotEmpty().WithMessage("Okul Id boş olamaz.");
-
         RuleFor(x => x.Grade)
-            .InclusiveBetween(1, 12).WithMessage("Sınıf 1-12 arasında olmalı.");
+            .GreaterThan(0).WithMessage("Sınıf seviyesi geçerli olmalıdır.");
 
         RuleFor(x => x.Section)
             .NotEmpty().WithMessage("Şube boş olamaz.")
-            .MaximumLength(2);
+            .MaximumLength(10).WithMessage("Şube en fazla 10 karakter olabilir.");
     }
 }

@@ -16,19 +16,27 @@ public class ClassroomRepository : IClassroomRepository
 
     public async Task<List<Classroom>> GetAllAsync()
     {
-        return await _classrooms.Find(x => x.IsActive).ToListAsync();
+        return await _classrooms.Find(x => true).ToListAsync();
     }
 
     public async Task<List<Classroom>> GetBySchoolIdAsync(string schoolId)
     {
-        return await _classrooms
-            .Find(x => x.SchoolId == schoolId && x.IsActive)
-            .ToListAsync();
+        return await _classrooms.Find(x => x.SchoolId == schoolId).ToListAsync();
     }
 
     public async Task<Classroom?> GetByIdAsync(string id)
     {
         return await _classrooms.Find(x => x.Id == id).FirstOrDefaultAsync();
+    }
+
+    public async Task<Classroom?> GetBySchoolGradeSectionAsync(string schoolId, int grade, string section)
+    {
+        return await _classrooms
+            .Find(x =>
+                x.SchoolId == schoolId &&
+                x.Grade == grade &&
+                x.Section.ToLower() == section.ToLower())
+            .FirstOrDefaultAsync();
     }
 
     public async Task CreateAsync(Classroom classroom)
@@ -38,20 +46,11 @@ public class ClassroomRepository : IClassroomRepository
 
     public async Task UpdateAsync(Classroom classroom)
     {
-        classroom.UpdatedDate = DateTime.UtcNow;
-
-        await _classrooms.ReplaceOneAsync(
-            x => x.Id == classroom.Id,
-            classroom
-        );
+        await _classrooms.ReplaceOneAsync(x => x.Id == classroom.Id, classroom);
     }
 
     public async Task DeleteAsync(string id)
     {
-        var update = Builders<Classroom>.Update
-            .Set(x => x.IsActive, false)
-            .Set(x => x.UpdatedDate, DateTime.UtcNow);
-
-        await _classrooms.UpdateOneAsync(x => x.Id == id, update);
+        await _classrooms.DeleteOneAsync(x => x.Id == id);
     }
 }

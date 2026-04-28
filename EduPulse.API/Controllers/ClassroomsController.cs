@@ -2,12 +2,13 @@
 using EduPulse.DTOs.Classrooms;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EduPulse.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "SchoolAdmin")]
+[Authorize]
 public class ClassroomsController : ControllerBase
 {
     private readonly IClassroomService _classroomService;
@@ -17,81 +18,46 @@ public class ClassroomsController : ControllerBase
         _classroomService = classroomService;
     }
 
-    private string? GetSchoolId()
-    {
-        return User.FindFirst("schoolId")?.Value;
-    }
+    private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
+    private string? SchoolId => User.FindFirst("schoolId")?.Value;
 
     [HttpGet]
+    [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> GetAll()
     {
-        var schoolId = GetSchoolId();
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
-
-        var result = await _classroomService.GetBySchoolIdAsync(schoolId);
+        var result = await _classroomService.GetAllForCurrentUserAsync(RoleName, SchoolId);
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{id}")]
+    [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> GetById(string id)
     {
-        var schoolId = GetSchoolId();
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
-
-        var result = await _classroomService.GetByIdAsync(id);
-
-        if (result.Data == null || result.Data.SchoolId != schoolId)
-            return Forbid("Bu kayda erişim yetkiniz yok.");
-
+        var result = await _classroomService.GetByIdForCurrentUserAsync(id, RoleName, SchoolId);
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpPost]
+    [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> Create(CreateClassroomDto dto)
     {
-        var schoolId = GetSchoolId();
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
-
-        dto.SchoolId = schoolId;
-
-        var result = await _classroomService.CreateAsync(dto);
+        var result = await _classroomService.CreateAsync(dto, RoleName, SchoolId);
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpPut]
+    [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> Update(UpdateClassroomDto dto)
     {
-        var schoolId = GetSchoolId();
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
-
-        dto.SchoolId = schoolId;
-
-        var result = await _classroomService.UpdateAsync(dto);
+        var result = await _classroomService.UpdateAsync(dto, RoleName, SchoolId);
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> Delete(string id)
     {
-        var schoolId = GetSchoolId();
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
-
-        var classroom = await _classroomService.GetByIdAsync(id);
-
-        if (classroom.Data == null || classroom.Data.SchoolId != schoolId)
-            return Forbid("Bu kaydı silme yetkiniz yok.");
-
-        var result = await _classroomService.DeleteAsync(id);
+        var result = await _classroomService.DeleteAsync(id, RoleName, SchoolId);
         return StatusCode(result.StatusCode, result);
     }
 }

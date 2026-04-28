@@ -19,13 +19,13 @@ public class SuperAdminSeeder
 
     public async Task SeedAsync()
     {
-        var role = await _roleRepository.GetByNameAsync("SuperAdmin");
+        var role = await _roleRepository.GetByNameAsync("superadmin");
 
         if (role is null)
         {
             role = new Role
             {
-                Name = "SuperAdmin",
+                Name = "superadmin",
                 IsActive = true
             };
 

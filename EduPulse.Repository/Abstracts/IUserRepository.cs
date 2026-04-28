@@ -9,6 +9,8 @@ public interface IUserRepository
     Task<User?> GetByEmailAsync(string email);
     Task<List<User>> GetBySchoolIdAsync(string schoolId);
 
+    Task<bool> ExistsSchoolAdminAsync(string schoolId);
+
     Task CreateAsync(User user);
     Task UpdateAsync(User user);
     Task DeleteAsync(string id);

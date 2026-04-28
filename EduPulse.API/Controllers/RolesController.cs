@@ -7,7 +7,7 @@ namespace EduPulse.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "SuperAdmin")]
+[Authorize(Roles = "superadmin")]
 public class RolesController : ControllerBase
 {
     private readonly IRoleService _roleService;

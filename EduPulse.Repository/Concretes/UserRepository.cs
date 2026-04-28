@@ -34,6 +34,13 @@ public class UserRepository : IUserRepository
         return await _users.Find(x => x.SchoolId == schoolId).ToListAsync();
     }
 
+    public async Task<bool> ExistsSchoolAdminAsync(string schoolId)
+    {
+        return await _users
+            .Find(x => x.SchoolId == schoolId && x.RoleName.ToLower() == "schooladmin")
+            .AnyAsync();
+    }
+
     public async Task CreateAsync(User user)
     {
         await _users.InsertOneAsync(user);

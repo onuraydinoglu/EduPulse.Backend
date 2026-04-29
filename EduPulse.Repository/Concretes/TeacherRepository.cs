@@ -16,7 +16,9 @@ public class TeacherRepository : ITeacherRepository
 
     public async Task<List<Teacher>> GetAllAsync()
     {
-        return await _teachers.Find(x => x.IsActive).ToListAsync();
+        return await _teachers
+            .Find(x => x.IsActive)
+            .ToListAsync();
     }
 
     public async Task<List<Teacher>> GetBySchoolIdAsync(string schoolId)
@@ -28,7 +30,16 @@ public class TeacherRepository : ITeacherRepository
 
     public async Task<Teacher?> GetByIdAsync(string id)
     {
-        return await _teachers.Find(x => x.Id == id).FirstOrDefaultAsync();
+        return await _teachers
+            .Find(x => x.Id == id)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<Teacher?> GetByUserIdAsync(string userId)
+    {
+        return await _teachers
+            .Find(x => x.UserId == userId && x.IsActive)
+            .FirstOrDefaultAsync();
     }
 
     public async Task CreateAsync(Teacher teacher)

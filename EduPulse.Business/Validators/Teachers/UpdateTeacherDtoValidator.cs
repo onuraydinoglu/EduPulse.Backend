@@ -18,15 +18,16 @@ public class UpdateTeacherDtoValidator : AbstractValidator<UpdateTeacherDto>
             .NotEmpty().WithMessage("Öğretmen soyadı boş olamaz.")
             .MaximumLength(50).WithMessage("Öğretmen soyadı en fazla 50 karakter olabilir.");
 
-        RuleFor(x => x.PhoneNumber)
-            .NotEmpty().WithMessage("Telefon numarası boş olamaz.")
-            .Matches(@"^0\d{10}$").WithMessage("Telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.");
-
         RuleFor(x => x.Email)
             .EmailAddress().WithMessage("Geçerli bir email giriniz.")
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
-        RuleFor(x => x.SchoolId)
-            .NotEmpty().WithMessage("Okul Id boş olamaz.");
+        RuleFor(x => x.PhoneNumber)
+            .NotEmpty().WithMessage("Telefon numarası boş olamaz.")
+            .Matches(@"^0\d{10}$").WithMessage("Telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.");
+
+        RuleFor(x => x.Department)
+            .MaximumLength(100).WithMessage("Bölüm en fazla 100 karakter olabilir.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Department));
     }
 }

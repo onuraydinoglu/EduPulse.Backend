@@ -1,19 +1,14 @@
 ﻿using EduPulse.Entities.Common;
 
-namespace EduPulse.Entities.Teachers
+namespace EduPulse.Entities.Teachers;
+
+public class Teacher : BaseEntity
 {
-    public class Teacher : BaseEntity
-    {
-        public string FirstName { get; set; } = null!;
-        public string LastName { get; set; } = null!;
+    public string UserId { get; set; } = null!;
+    public string SchoolId { get; set; } = null!;
 
-        public string Branch { get; set; } = null!;
+    public string? BranchLessonId { get; set; }
+    public string? Department { get; set; }
 
-        public string PhoneNumber { get; set; } = null!;
-        public string? Email { get; set; }
-
-        public string SchoolId { get; set; } = null!;
-
-        public bool IsActive { get; set; } = true;
-    }
+    public bool IsActive { get; set; } = true;
 }

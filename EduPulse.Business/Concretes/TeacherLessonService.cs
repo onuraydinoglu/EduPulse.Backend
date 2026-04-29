@@ -10,6 +10,7 @@ namespace EduPulse.Business.Concretes;
 public class TeacherLessonService : ITeacherLessonService
 {
     private readonly ITeacherLessonRepository _teacherLessonRepository;
+    private readonly IUserRepository _userRepository;
     private readonly ITeacherRepository _teacherRepository;
     private readonly ILessonRepository _lessonRepository;
     private readonly IClassroomRepository _classroomRepository;
@@ -23,6 +24,7 @@ public class TeacherLessonService : ITeacherLessonService
         ILessonRepository lessonRepository,
         IClassroomRepository classroomRepository,
         ISchoolRepository schoolRepository,
+        IUserRepository userRepository,
         IValidator<CreateTeacherLessonDto> createValidator,
         IValidator<UpdateTeacherLessonDto> updateValidator)
     {
@@ -31,6 +33,7 @@ public class TeacherLessonService : ITeacherLessonService
         _lessonRepository = lessonRepository;
         _classroomRepository = classroomRepository;
         _schoolRepository = schoolRepository;
+        _userRepository = userRepository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
     }
@@ -77,6 +80,10 @@ public class TeacherLessonService : ITeacherLessonService
             return Result<TeacherLessonListDto>.Failure("Kayıt bulunamadı.", 404);
 
         var teacher = await _teacherRepository.GetByIdAsync(x.TeacherId);
+        var teacherUser = teacher is null
+            ? null
+            : await _userRepository.GetByIdAsync(teacher.UserId);
+
         var lesson = await _lessonRepository.GetByIdAsync(x.LessonId);
         var classroom = await _classroomRepository.GetByIdAsync(x.ClassroomId);
 
@@ -85,7 +92,9 @@ public class TeacherLessonService : ITeacherLessonService
             Id = x.Id,
             SchoolId = x.SchoolId,
             TeacherId = x.TeacherId,
-            TeacherName = teacher != null ? $"{teacher.FirstName} {teacher.LastName}" : "",
+            TeacherName = teacherUser is not null
+                ? $"{teacherUser.FirstName} {teacherUser.LastName}"
+                : "",
             LessonId = x.LessonId,
             LessonName = lesson?.Name ?? "",
             ClassroomId = x.ClassroomId,
@@ -213,12 +222,17 @@ public class TeacherLessonService : ITeacherLessonService
     private async Task<List<TeacherLessonListDto>> MapToListDtoAsync(List<TeacherLesson> list)
     {
         var teachers = await _teacherRepository.GetAllAsync();
+        var users = await _userRepository.GetAllAsync();
         var lessons = await _lessonRepository.GetAllAsync();
         var classrooms = await _classroomRepository.GetAllAsync();
 
         return list.Select(x =>
         {
             var teacher = teachers.FirstOrDefault(t => t.Id == x.TeacherId);
+            var teacherUser = teacher is null
+                ? null
+                : users.FirstOrDefault(u => u.Id == teacher.UserId);
+
             var lesson = lessons.FirstOrDefault(l => l.Id == x.LessonId);
             var classroom = classrooms.FirstOrDefault(c => c.Id == x.ClassroomId);
 
@@ -227,7 +241,9 @@ public class TeacherLessonService : ITeacherLessonService
                 Id = x.Id,
                 SchoolId = x.SchoolId,
                 TeacherId = x.TeacherId,
-                TeacherName = teacher != null ? $"{teacher.FirstName} {teacher.LastName}" : "",
+                TeacherName = teacherUser is not null
+                    ? $"{teacherUser.FirstName} {teacherUser.LastName}"
+                    : "",
                 LessonId = x.LessonId,
                 LessonName = lesson?.Name ?? "",
                 ClassroomId = x.ClassroomId,

@@ -23,12 +23,8 @@ public class CreateTeacherDtoValidator : AbstractValidator<CreateTeacherDto>
             .EmailAddress().WithMessage("Geçerli bir email giriniz.")
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
-        RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Şifre boş olamaz.")
-            .MinimumLength(6).WithMessage("Şifre en az 6 karakter olmalıdır.")
-            .MaximumLength(50).WithMessage("Şifre en fazla 50 karakter olmalıdır.");
-
-        RuleFor(x => x.SchoolId)
-            .NotEmpty().WithMessage("Okul Id boş olamaz.");
+        RuleFor(x => x.Department)
+            .MaximumLength(100).WithMessage("Bölüm en fazla 100 karakter olabilir.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Department));
     }
 }

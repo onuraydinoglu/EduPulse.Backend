@@ -127,23 +127,11 @@ public class MongoDbContext
     {
         Teachers.Indexes.CreateOne(new CreateIndexModel<Teacher>(
             Builders<Teacher>.IndexKeys
-                .Ascending(x => x.SchoolId)
-                .Ascending(x => x.PhoneNumber),
+                .Ascending(x => x.UserId),
             new CreateIndexOptions
             {
                 Unique = true,
-                Name = "UX_Teachers_SchoolId_PhoneNumber"
-            }));
-
-        Teachers.Indexes.CreateOne(new CreateIndexModel<Teacher>(
-            Builders<Teacher>.IndexKeys
-                .Ascending(x => x.SchoolId)
-                .Ascending(x => x.Email),
-            new CreateIndexOptions
-            {
-                Unique = true,
-                Sparse = true,
-                Name = "UX_Teachers_SchoolId_Email"
+                Name = "UX_Teachers_UserId"
             }));
 
         Teachers.Indexes.CreateOne(new CreateIndexModel<Teacher>(
@@ -153,6 +141,15 @@ public class MongoDbContext
             new CreateIndexOptions
             {
                 Name = "IX_Teachers_SchoolId_IsActive"
+            }));
+
+        Teachers.Indexes.CreateOne(new CreateIndexModel<Teacher>(
+            Builders<Teacher>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.BranchLessonId),
+            new CreateIndexOptions
+            {
+                Name = "IX_Teachers_SchoolId_BranchLessonId"
             }));
     }
 

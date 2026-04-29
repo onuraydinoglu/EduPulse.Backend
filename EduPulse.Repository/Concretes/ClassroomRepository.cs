@@ -29,6 +29,28 @@ public class ClassroomRepository : IClassroomRepository
         return await _classrooms.Find(x => x.Id == id).FirstOrDefaultAsync();
     }
 
+    public async Task<Classroom?> GetBySchoolIdAndTeacherIdAsync(string schoolId, string teacherId)
+    {
+        return await _classrooms
+            .Find(x =>
+                x.SchoolId == schoolId &&
+                x.TeacherId == teacherId)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<Classroom?> GetBySchoolIdAndTeacherIdExceptClassroomIdAsync(
+    string schoolId,
+    string teacherId,
+    string classroomId)
+    {
+        return await _classrooms
+            .Find(x =>
+                x.SchoolId == schoolId &&
+                x.TeacherId == teacherId &&
+                x.Id != classroomId)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<Classroom?> GetBySchoolGradeSectionAsync(string schoolId, int grade, string section)
     {
         return await _classrooms

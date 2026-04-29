@@ -42,7 +42,31 @@ public class ClassroomService : IClassroomService
             classrooms = await _classroomRepository.GetBySchoolIdAsync(schoolId);
         }
 
-        var dtoList = classrooms.Select(MapToListDto).ToList();
+        var dtoList = new List<ClassroomListDto>();
+
+        foreach (var classroom in classrooms)
+        {
+            string? teacherFullName = null;
+
+            if (!string.IsNullOrWhiteSpace(classroom.TeacherId))
+            {
+                var teacher = await _userRepository.GetByIdAsync(classroom.TeacherId);
+
+                if (teacher is not null)
+                    teacherFullName = $"{teacher.FirstName} {teacher.LastName}";
+            }
+
+            dtoList.Add(new ClassroomListDto
+            {
+                Id = classroom.Id,
+                SchoolId = classroom.SchoolId,
+                Grade = classroom.Grade,
+                Section = classroom.Section,
+                TeacherId = classroom.TeacherId,
+                TeacherFullName = teacherFullName,
+                IsActive = classroom.IsActive
+            });
+        }
 
         return Result<List<ClassroomListDto>>.Success(dtoList, "Sınıflar başarıyla listelendi.", 200);
     }
@@ -92,8 +116,17 @@ public class ClassroomService : IClassroomService
             if (teacher is null)
                 return Result.Failure("Öğretmen bulunamadı.", 404);
 
+            if (teacher.RoleName != "teacher")
+                return Result.Failure("Seçilen kullanıcı öğretmen değil.", 400);
+
             if (teacher.SchoolId != selectedSchoolId)
                 return Result.Failure("Seçilen öğretmen bu okula ait değil.", 400);
+
+            var teacherClassroom = await _classroomRepository
+                .GetBySchoolIdAndTeacherIdAsync(selectedSchoolId, dto.TeacherId);
+
+            if (teacherClassroom is not null)
+                return Result.Failure("Bu öğretmen bu okulda zaten başka bir sınıfa atanmış.", 400);
         }
 
         var classroom = new Classroom
@@ -143,8 +176,21 @@ public class ClassroomService : IClassroomService
             if (teacher is null)
                 return Result.Failure("Öğretmen bulunamadı.", 404);
 
+            if (teacher.RoleName != "teacher")
+                return Result.Failure("Seçilen kullanıcı öğretmen değil.", 400);
+
             if (teacher.SchoolId != classroom.SchoolId)
                 return Result.Failure("Seçilen öğretmen bu okula ait değil.", 400);
+
+            var teacherClassroom = await _classroomRepository
+                .GetBySchoolIdAndTeacherIdExceptClassroomIdAsync(
+                    classroom.SchoolId,
+                    dto.TeacherId,
+                    dto.Id
+                );
+
+            if (teacherClassroom is not null)
+                return Result.Failure("Bu öğretmen bu okulda zaten başka bir sınıfa atanmış.", 400);
         }
 
         classroom.Grade = dto.Grade;

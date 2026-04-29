@@ -8,5 +8,6 @@ public class ClassroomListDto
     public string Section { get; set; } = null!;
     public string Name => $"{Grade}-{Section}";
     public string? TeacherId { get; set; }
+    public string? TeacherFullName { get; set; }
     public bool IsActive { get; set; }
 }

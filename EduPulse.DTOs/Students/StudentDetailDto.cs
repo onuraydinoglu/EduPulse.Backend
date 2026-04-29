@@ -1,6 +1,6 @@
 ﻿namespace EduPulse.DTOs.Students;
 
-public class StudentListDto
+public class StudentDetailDto
 {
     public string Id { get; set; } = null!;
 

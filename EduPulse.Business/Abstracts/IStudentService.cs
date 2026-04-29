@@ -5,11 +5,10 @@ namespace EduPulse.Business.Abstracts;
 
 public interface IStudentService
 {
-    Task<Result<List<StudentListDto>>> GetAllAsync();
-    Task<Result<List<StudentListDto>>> GetBySchoolIdAsync(string schoolId);
-    Task<Result<List<StudentListDto>>> GetByClassroomIdAsync(string classroomId);
-    Task<Result<StudentListDto>> GetByIdAsync(string id);
-    Task<Result> CreateAsync(CreateStudentDto dto);
-    Task<Result> UpdateAsync(UpdateStudentDto dto);
-    Task<Result> DeleteAsync(string id);
+    Task<Result<List<StudentListDto>>> GetAllForCurrentUserAsync(string? currentRoleName, string? currentSchoolId);
+    Task<Result<StudentListDto>> GetByIdForCurrentUserAsync(string id, string? currentRoleName, string? currentSchoolId);
+
+    Task<Result> CreateForCurrentUserAsync(CreateStudentDto dto, string? currentRoleName, string? currentSchoolId);
+    Task<Result> UpdateForCurrentUserAsync(UpdateStudentDto dto, string? currentRoleName, string? currentSchoolId);
+    Task<Result> DeleteForCurrentUserAsync(string id, string? currentRoleName, string? currentSchoolId);
 }

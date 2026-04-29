@@ -7,14 +7,10 @@ public class UpdateStudentDto
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
 
-    public string SchoolNumber { get; set; } = null!;
-    public string StudentPhone { get; set; } = null!;
+    public string? Email { get; set; }
+    public string? PhoneNumber { get; set; }
 
-    public string SchoolId { get; set; } = null!;
     public string ClassroomId { get; set; } = null!;
-
-    public List<string> ClubIds { get; set; } = new();
-    public List<string> ParentIds { get; set; } = new();
-
-    public bool IsActive { get; set; }
+    public string StudentNumber { get; set; } = null!;
+    public bool IsActive { get; set; } = true;
 }

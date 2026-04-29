@@ -184,11 +184,21 @@ public class MongoDbContext
         Students.Indexes.CreateOne(new CreateIndexModel<Student>(
             Builders<Student>.IndexKeys
                 .Ascending(x => x.SchoolId)
-                .Ascending(x => x.SchoolNumber),
+                .Ascending(x => x.StudentNumber),
+            new CreateIndexOptions<Student>
+            {
+                Unique = true,
+                Name = "UX_Students_SchoolId_StudentNumber_Active",
+                PartialFilterExpression = Builders<Student>.Filter.Eq(x => x.IsActive, true)
+            }));
+
+        Students.Indexes.CreateOne(new CreateIndexModel<Student>(
+            Builders<Student>.IndexKeys
+                .Ascending(x => x.UserId),
             new CreateIndexOptions
             {
                 Unique = true,
-                Name = "UX_Students_SchoolId_SchoolNumber"
+                Name = "UX_Students_UserId"
             }));
 
         Students.Indexes.CreateOne(new CreateIndexModel<Student>(

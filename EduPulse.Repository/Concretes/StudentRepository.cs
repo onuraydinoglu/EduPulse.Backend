@@ -16,9 +16,7 @@ public class StudentRepository : IStudentRepository
 
     public async Task<List<Student>> GetAllAsync()
     {
-        return await _students
-            .Find(x => x.IsActive)
-            .ToListAsync();
+        return await _students.Find(x => x.IsActive).ToListAsync();
     }
 
     public async Task<List<Student>> GetBySchoolIdAsync(string schoolId)
@@ -37,8 +35,18 @@ public class StudentRepository : IStudentRepository
 
     public async Task<Student?> GetByIdAsync(string id)
     {
+        return await _students.Find(x => x.Id == id).FirstOrDefaultAsync();
+    }
+
+    public async Task<Student?> GetByUserIdAsync(string userId)
+    {
+        return await _students.Find(x => x.UserId == userId).FirstOrDefaultAsync();
+    }
+
+    public async Task<Student?> GetBySchoolIdAndStudentNumberAsync(string schoolId, string studentNumber)
+    {
         return await _students
-            .Find(x => x.Id == id)
+            .Find(x => x.SchoolId == schoolId && x.StudentNumber == studentNumber)
             .FirstOrDefaultAsync();
     }
 
@@ -50,11 +58,7 @@ public class StudentRepository : IStudentRepository
     public async Task UpdateAsync(Student student)
     {
         student.UpdatedDate = DateTime.UtcNow;
-
-        await _students.ReplaceOneAsync(
-            x => x.Id == student.Id,
-            student
-        );
+        await _students.ReplaceOneAsync(x => x.Id == student.Id, student);
     }
 
     public async Task DeleteAsync(string id)

@@ -11,25 +11,23 @@ public class UpdateStudentDtoValidator : AbstractValidator<UpdateStudentDto>
             .NotEmpty().WithMessage("Öğrenci Id boş olamaz.");
 
         RuleFor(x => x.FirstName)
-            .NotEmpty().WithMessage("Öğrenci adı boş olamaz.")
-            .MaximumLength(50);
+            .NotEmpty().WithMessage("Ad boş olamaz.");
 
         RuleFor(x => x.LastName)
-            .NotEmpty().WithMessage("Öğrenci soyadı boş olamaz.")
-            .MaximumLength(50);
+            .NotEmpty().WithMessage("Soyad boş olamaz.");
 
-        RuleFor(x => x.SchoolNumber)
-            .NotEmpty().WithMessage("Okul numarası boş olamaz.")
-            .MaximumLength(20);
+        RuleFor(x => x.Email)
+            .EmailAddress().WithMessage("Geçerli bir e-posta adresi giriniz.")
+            .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
-        RuleFor(x => x.StudentPhone)
-            .NotEmpty().WithMessage("Telefon numarası boş olamaz.")
-            .Matches(@"^05\d{9}$").WithMessage("Telefon numarası 05 ile başlamalı ve 11 haneli olmalıdır.");
-
-        RuleFor(x => x.SchoolId)
-            .NotEmpty().WithMessage("Okul Id boş olamaz.");
+        RuleFor(x => x.PhoneNumber)
+            .Matches(@"^0\d{10}$").WithMessage("Telefon 0 ile başlamalı ve 11 haneli olmalıdır.")
+            .When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
 
         RuleFor(x => x.ClassroomId)
-            .NotEmpty().WithMessage("Sınıf Id boş olamaz.");
+            .NotEmpty().WithMessage("Sınıf seçilmelidir.");
+
+        RuleFor(x => x.StudentNumber)
+            .NotEmpty().WithMessage("Öğrenci numarası boş olamaz.");
     }
 }

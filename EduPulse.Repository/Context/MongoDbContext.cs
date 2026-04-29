@@ -105,11 +105,12 @@ public class MongoDbContext
         Lessons.Indexes.CreateOne(new CreateIndexModel<Lesson>(
             Builders<Lesson>.IndexKeys
                 .Ascending(x => x.SchoolId)
-                .Ascending(x => x.Name),
-            new CreateIndexOptions
+                .Ascending(x => x.NormalizedName),
+            new CreateIndexOptions<Lesson>
             {
                 Unique = true,
-                Name = "UX_Lessons_SchoolId_Name"
+                Name = "UX_Lessons_SchoolId_NormalizedName_Active",
+                PartialFilterExpression = Builders<Lesson>.Filter.Eq(x => x.IsActive, true)
             }));
 
         Lessons.Indexes.CreateOne(new CreateIndexModel<Lesson>(

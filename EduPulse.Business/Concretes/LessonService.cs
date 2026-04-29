@@ -10,91 +10,79 @@ namespace EduPulse.Business.Concretes;
 public class LessonService : ILessonService
 {
     private readonly ILessonRepository _lessonRepository;
-    private readonly ISchoolRepository _schoolRepository;
     private readonly IValidator<CreateLessonDto> _createValidator;
     private readonly IValidator<UpdateLessonDto> _updateValidator;
 
     public LessonService(
         ILessonRepository lessonRepository,
-        ISchoolRepository schoolRepository,
         IValidator<CreateLessonDto> createValidator,
         IValidator<UpdateLessonDto> updateValidator)
     {
         _lessonRepository = lessonRepository;
-        _schoolRepository = schoolRepository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
     }
 
-    public async Task<Result<List<LessonListDto>>> GetAllAsync()
+    public async Task<Result<List<LessonListDto>>> GetAllForCurrentUserAsync(string? roleName, string? schoolId)
     {
-        var lessons = await _lessonRepository.GetAllAsync();
+        List<Lesson> lessons;
 
-        var result = lessons.Select(x => new LessonListDto
+        if (roleName == "superadmin")
         {
-            Id = x.Id,
-            SchoolId = x.SchoolId,
-            Name = x.Name,
-            IsActive = x.IsActive
-        }).ToList();
+            lessons = await _lessonRepository.GetAllAsync();
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(schoolId))
+                return Result<List<LessonListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
 
-        return Result<List<LessonListDto>>.Success(result, "Dersler başarıyla listelendi.");
+            lessons = await _lessonRepository.GetBySchoolIdAsync(schoolId);
+        }
+
+        var dtoList = lessons.Select(MapToListDto).ToList();
+
+        return Result<List<LessonListDto>>.Success(dtoList, "Dersler başarıyla listelendi.", 200);
     }
 
-    public async Task<Result<List<LessonListDto>>> GetBySchoolIdAsync(string schoolId)
-    {
-        var school = await _schoolRepository.GetByIdAsync(schoolId);
-
-        if (school is null)
-            return Result<List<LessonListDto>>.Failure("Okul bulunamadı.", 404);
-
-        var lessons = await _lessonRepository.GetBySchoolIdAsync(schoolId);
-
-        var result = lessons.Select(x => new LessonListDto
-        {
-            Id = x.Id,
-            SchoolId = x.SchoolId,
-            Name = x.Name,
-            IsActive = x.IsActive
-        }).ToList();
-
-        return Result<List<LessonListDto>>.Success(result, "Okula ait dersler başarıyla listelendi.");
-    }
-
-    public async Task<Result<LessonListDto>> GetByIdAsync(string id)
+    public async Task<Result<LessonListDto>> GetByIdForCurrentUserAsync(string id, string? roleName, string? schoolId)
     {
         var lesson = await _lessonRepository.GetByIdAsync(id);
 
-        if (lesson is null)
+        if (lesson is null || !lesson.IsActive)
             return Result<LessonListDto>.Failure("Ders bulunamadı.", 404);
 
-        var result = new LessonListDto
-        {
-            Id = lesson.Id,
-            SchoolId = lesson.SchoolId,
-            Name = lesson.Name,
-            IsActive = lesson.IsActive
-        };
+        if (roleName != "superadmin" && lesson.SchoolId != schoolId)
+            return Result<LessonListDto>.Failure("Bu derse erişim yetkiniz yok.", 403);
 
-        return Result<LessonListDto>.Success(result, "Ders başarıyla getirildi.");
+        return Result<LessonListDto>.Success(MapToListDto(lesson), "Ders başarıyla getirildi.", 200);
     }
 
-    public async Task<Result> CreateAsync(CreateLessonDto dto)
+    public async Task<Result> CreateAsync(CreateLessonDto dto, string? roleName, string? schoolId)
     {
         var validationResult = await _createValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
             return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
-        var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
+        if (roleName != "schooladmin" && roleName != "officer")
+            return Result.Failure("Ders ekleme yetkiniz yok.", 403);
 
-        if (school is null)
-            return Result.Failure("Okul bulunamadı.", 404);
+        if (string.IsNullOrWhiteSpace(schoolId))
+            return Result.Failure("Okul bilgisi bulunamadı.", 400);
+
+        var normalizedName = NormalizeLessonName(dto.Name);
+
+        var existingLesson = await _lessonRepository
+            .GetBySchoolIdAndNormalizedNameAsync(schoolId, normalizedName);
+
+        if (existingLesson is not null)
+            return Result.Failure("Bu okulda aynı ders zaten mevcut.", 400);
 
         var lesson = new Lesson
         {
-            SchoolId = dto.SchoolId,
-            Name = dto.Name,
+            SchoolId = schoolId,
+            Name = dto.Name.Trim(),
+            NormalizedName = normalizedName,
             IsActive = true
         };
 
@@ -103,41 +91,78 @@ public class LessonService : ILessonService
         return Result.Success("Ders başarıyla oluşturuldu.", 201);
     }
 
-    public async Task<Result> UpdateAsync(UpdateLessonDto dto)
+    public async Task<Result> UpdateAsync(UpdateLessonDto dto, string? roleName, string? schoolId)
     {
         var validationResult = await _updateValidator.ValidateAsync(dto);
 
         if (!validationResult.IsValid)
             return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
 
+        if (roleName != "schooladmin" && roleName != "officer")
+            return Result.Failure("Ders güncelleme yetkiniz yok.", 403);
+
+        if (string.IsNullOrWhiteSpace(schoolId))
+            return Result.Failure("Okul bilgisi bulunamadı.", 400);
+
         var lesson = await _lessonRepository.GetByIdAsync(dto.Id);
 
-        if (lesson is null)
+        if (lesson is null || !lesson.IsActive)
             return Result.Failure("Ders bulunamadı.", 404);
 
-        var school = await _schoolRepository.GetByIdAsync(dto.SchoolId);
+        if (lesson.SchoolId != schoolId)
+            return Result.Failure("Bu dersi güncelleme yetkiniz yok.", 403);
 
-        if (school is null)
-            return Result.Failure("Okul bulunamadı.", 404);
+        var normalizedName = NormalizeLessonName(dto.Name);
 
-        lesson.SchoolId = dto.SchoolId;
-        lesson.Name = dto.Name;
+        var existingLesson = await _lessonRepository
+            .GetBySchoolIdAndNormalizedNameAsync(schoolId, normalizedName);
+
+        if (existingLesson is not null && existingLesson.Id != dto.Id)
+            return Result.Failure("Bu okulda aynı ders zaten mevcut.", 400);
+
+        lesson.Name = dto.Name.Trim();
+        lesson.NormalizedName = normalizedName;
         lesson.IsActive = dto.IsActive;
 
         await _lessonRepository.UpdateAsync(lesson);
 
-        return Result.Success("Ders başarıyla güncellendi.");
+        return Result.Success("Ders başarıyla güncellendi.", 200);
     }
 
-    public async Task<Result> DeleteAsync(string id)
+    public async Task<Result> DeleteAsync(string id, string? roleName, string? schoolId)
     {
+        if (roleName != "schooladmin" && roleName != "officer")
+            return Result.Failure("Ders silme yetkiniz yok.", 403);
+
+        if (string.IsNullOrWhiteSpace(schoolId))
+            return Result.Failure("Okul bilgisi bulunamadı.", 400);
+
         var lesson = await _lessonRepository.GetByIdAsync(id);
 
-        if (lesson is null)
+        if (lesson is null || !lesson.IsActive)
             return Result.Failure("Ders bulunamadı.", 404);
+
+        if (lesson.SchoolId != schoolId)
+            return Result.Failure("Bu dersi silme yetkiniz yok.", 403);
 
         await _lessonRepository.DeleteAsync(id);
 
-        return Result.Success("Ders başarıyla silindi.");
+        return Result.Success("Ders başarıyla silindi.", 200);
+    }
+
+    private static LessonListDto MapToListDto(Lesson lesson)
+    {
+        return new LessonListDto
+        {
+            Id = lesson.Id,
+            SchoolId = lesson.SchoolId,
+            Name = lesson.Name,
+            IsActive = lesson.IsActive
+        };
+    }
+
+    private static string NormalizeLessonName(string name)
+    {
+        return name.Trim().ToUpperInvariant();
     }
 }

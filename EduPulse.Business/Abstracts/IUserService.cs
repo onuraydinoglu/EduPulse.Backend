@@ -11,6 +11,7 @@ public interface IUserService
 
     Task<Result<List<UserListDto>>> GetTeachersAsync(string? schoolId);
     Task<Result<List<UserListDto>>> GetOfficersAsync(string? schoolId);
+    Task<Result<List<UserListDto>>> GetStudentsAsync(string? schoolId);
 
     Task<Result<List<UserListDto>>> GetAllForCurrentUserAsync(string? currentRoleName, string? currentSchoolId);
     Task<Result<UserListDto>> GetByIdForCurrentUserAsync(string id, string? currentRoleName, string? currentSchoolId);

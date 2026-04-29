@@ -114,6 +114,17 @@ public class UserService : IUserService
         return Result<List<UserListDto>>.Success(result);
     }
 
+    public async Task<Result<List<UserListDto>>> GetStudentsAsync(string? schoolId)
+    {
+        var users = string.IsNullOrWhiteSpace(schoolId)
+            ? await _userRepository.GetByRoleNameAsync("student")
+            : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "student");
+
+        var result = users.Select(MapToListDto).ToList();
+
+        return Result<List<UserListDto>>.Success(result);
+    }
+
     public async Task<Result<List<UserListDto>>> GetAllForCurrentUserAsync(
         string? currentRoleName,
         string? currentSchoolId)

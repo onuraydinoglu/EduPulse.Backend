@@ -57,6 +57,17 @@ public class UsersController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    [HttpGet("students")]
+    [Authorize(Roles = "superadmin,schooladmin")]
+    public async Task<IActionResult> GetStudents()
+    {
+        var schoolId = RoleName == "superadmin" ? null : SchoolId;
+
+        var result = await _userService.GetStudentsAsync(schoolId);
+        return StatusCode(result.StatusCode, result);
+    }
+
+
     [HttpPost("teacher")]
     [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> CreateTeacher(CreateUserDto dto)
@@ -72,6 +83,15 @@ public class UsersController : ControllerBase
         var result = await _userService.CreateUserAsync(dto, SchoolId, "officer");
         return StatusCode(result.StatusCode, result);
     }
+
+    [HttpPost("student")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> CreateStudent(CreateUserDto dto)
+    {
+        var result = await _userService.CreateUserAsync(dto, SchoolId, "student");
+        return StatusCode(result.StatusCode, result);
+    }
+
 
     [HttpPut]
     [Authorize(Roles = "superadmin,schooladmin")]

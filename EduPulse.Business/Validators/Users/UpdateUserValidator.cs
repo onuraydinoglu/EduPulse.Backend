@@ -22,7 +22,7 @@ public class UpdateUserValidator : AbstractValidator<UpdateUserDto>
             .NotEmpty().WithMessage("Email alanı boş bırakılamaz.")
             .EmailAddress().WithMessage("Geçerli bir email adresi giriniz.");
 
-        RuleFor(x => x.RoleId)
-            .NotEmpty().WithMessage("Rol seçilmelidir.");
+        RuleFor(x => x.PhoneNumber)
+            .Matches(@"^0\d{10}$").WithMessage("Telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.");
     }
 }

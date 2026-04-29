@@ -65,10 +65,7 @@ public class UserService : IUserService
     public async Task<Result<List<UserListDto>>> GetAllAsync()
     {
         var users = await _userRepository.GetAllAsync();
-
-        var result = users.Select(MapToListDto).ToList();
-
-        return Result<List<UserListDto>>.Success(result);
+        return Result<List<UserListDto>>.Success(users.Select(MapToListDto).ToList());
     }
 
     public async Task<Result<UserListDto>> GetByIdAsync(string id)
@@ -78,18 +75,13 @@ public class UserService : IUserService
         if (user is null)
             return Result<UserListDto>.Failure("Kullanıcı bulunamadı.", 404);
 
-        var result = MapToListDto(user);
-
-        return Result<UserListDto>.Success(result);
+        return Result<UserListDto>.Success(MapToListDto(user));
     }
 
     public async Task<Result<List<UserListDto>>> GetBySchoolIdAsync(string schoolId)
     {
         var users = await _userRepository.GetBySchoolIdAsync(schoolId);
-
-        var result = users.Select(MapToListDto).ToList();
-
-        return Result<List<UserListDto>>.Success(result);
+        return Result<List<UserListDto>>.Success(users.Select(MapToListDto).ToList());
     }
 
     public async Task<Result<List<UserListDto>>> GetTeachersAsync(string? schoolId)
@@ -98,9 +90,7 @@ public class UserService : IUserService
             ? await _userRepository.GetByRoleNameAsync("teacher")
             : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "teacher");
 
-        var result = users.Select(MapToListDto).ToList();
-
-        return Result<List<UserListDto>>.Success(result);
+        return Result<List<UserListDto>>.Success(users.Select(MapToListDto).ToList());
     }
 
     public async Task<Result<List<UserListDto>>> GetOfficersAsync(string? schoolId)
@@ -109,9 +99,7 @@ public class UserService : IUserService
             ? await _userRepository.GetByRoleNameAsync("officer")
             : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "officer");
 
-        var result = users.Select(MapToListDto).ToList();
-
-        return Result<List<UserListDto>>.Success(result);
+        return Result<List<UserListDto>>.Success(users.Select(MapToListDto).ToList());
     }
 
     public async Task<Result<List<UserListDto>>> GetStudentsAsync(string? schoolId)
@@ -120,9 +108,7 @@ public class UserService : IUserService
             ? await _userRepository.GetByRoleNameAsync("student")
             : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "student");
 
-        var result = users.Select(MapToListDto).ToList();
-
-        return Result<List<UserListDto>>.Success(result);
+        return Result<List<UserListDto>>.Success(users.Select(MapToListDto).ToList());
     }
 
     public async Task<Result<List<UserListDto>>> GetAllForCurrentUserAsync(
@@ -184,9 +170,6 @@ public class UserService : IUserService
         if (string.IsNullOrWhiteSpace(schoolId))
             return Result.Failure("Okul bilgisi bulunamadı.", 403);
 
-        if (string.IsNullOrWhiteSpace(roleName))
-            return Result.Failure("Rol bilgisi bulunamadı.", 400);
-
         var requestedRoleName = roleName.Trim().ToLower();
 
         var forbiddenRoles = new[] { "superadmin", "schooladmin" };
@@ -235,57 +218,35 @@ public class UserService : IUserService
     public async Task<Result> UpdateForCurrentUserAsync(
         UpdateUserDto dto,
         string? currentRoleName,
-        string? currentSchoolId)
+        string? currentSchoolId,
+        string targetRoleName)
     {
         currentRoleName = currentRoleName?.Trim().ToLower();
+        targetRoleName = targetRoleName.Trim().ToLower();
+
+        var allowedTargetRoles = new[] { "teacher", "officer", "student" };
+
+        if (!allowedTargetRoles.Contains(targetRoleName))
+            return Result.Failure("Bu rol güncellenemez.", 403);
+
+        if (currentRoleName != "schooladmin")
+            return Result.Failure("Bu işlem için yetkiniz yok.", 403);
+
+        if (string.IsNullOrWhiteSpace(currentSchoolId))
+            return Result.Failure("Okul bilgisi bulunamadı.", 403);
 
         var user = await _userRepository.GetByIdAsync(dto.Id);
 
         if (user is null)
             return Result.Failure("Kullanıcı bulunamadı.", 404);
 
-        if (currentRoleName == "schooladmin")
-        {
-            if (string.IsNullOrWhiteSpace(currentSchoolId))
-                return Result.Failure("Okul bilgisi bulunamadı.", 403);
+        if (user.SchoolId != currentSchoolId)
+            return Result.Failure("Bu kullanıcıyı güncelleme yetkiniz yok.", 403);
 
-            if (user.SchoolId != currentSchoolId)
-                return Result.Failure("Bu kullanıcıyı güncelleme yetkiniz yok.", 403);
-        }
-        else if (currentRoleName != "superadmin")
-        {
-            return Result.Failure("Bu işlem için yetkiniz yok.", 403);
-        }
+        if (user.RoleName?.Trim().ToLower() != targetRoleName)
+            return Result.Failure("Bu endpoint sadece ilgili roldeki kullanıcıyı güncelleyebilir.", 403);
 
         return await UpdateAsync(dto);
-    }
-
-    public async Task<Result> DeleteForCurrentUserAsync(
-        string id,
-        string? currentRoleName,
-        string? currentSchoolId)
-    {
-        currentRoleName = currentRoleName?.Trim().ToLower();
-
-        var user = await _userRepository.GetByIdAsync(id);
-
-        if (user is null)
-            return Result.Failure("Kullanıcı bulunamadı.", 404);
-
-        if (currentRoleName == "schooladmin")
-        {
-            if (string.IsNullOrWhiteSpace(currentSchoolId))
-                return Result.Failure("Okul bilgisi bulunamadı.", 403);
-
-            if (user.SchoolId != currentSchoolId)
-                return Result.Failure("Bu kullanıcıyı silme yetkiniz yok.", 403);
-        }
-        else if (currentRoleName != "superadmin")
-        {
-            return Result.Failure("Bu işlem için yetkiniz yok.", 403);
-        }
-
-        return await DeleteAsync(id);
     }
 
     public async Task<Result> UpdateAsync(UpdateUserDto dto)
@@ -309,6 +270,40 @@ public class UserService : IUserService
         await _userRepository.UpdateAsync(user);
 
         return Result.Success("Kullanıcı başarıyla güncellendi.");
+    }
+
+    public async Task<Result> DeleteForCurrentUserAsync(
+        string id,
+        string? currentRoleName,
+        string? currentSchoolId,
+        string targetRoleName)
+    {
+        currentRoleName = currentRoleName?.Trim().ToLower();
+        targetRoleName = targetRoleName.Trim().ToLower();
+
+        var allowedTargetRoles = new[] { "teacher", "officer", "student" };
+
+        if (!allowedTargetRoles.Contains(targetRoleName))
+            return Result.Failure("Bu rol silinemez.", 403);
+
+        if (currentRoleName != "schooladmin")
+            return Result.Failure("Bu işlem için yetkiniz yok.", 403);
+
+        if (string.IsNullOrWhiteSpace(currentSchoolId))
+            return Result.Failure("Okul bilgisi bulunamadı.", 403);
+
+        var user = await _userRepository.GetByIdAsync(id);
+
+        if (user is null)
+            return Result.Failure("Kullanıcı bulunamadı.", 404);
+
+        if (user.SchoolId != currentSchoolId)
+            return Result.Failure("Bu kullanıcıyı silme yetkiniz yok.", 403);
+
+        if (user.RoleName?.Trim().ToLower() != targetRoleName)
+            return Result.Failure("Bu endpoint sadece ilgili roldeki kullanıcıyı silebilir.", 403);
+
+        return await DeleteAsync(id);
     }
 
     public async Task<Result> DeleteAsync(string id)

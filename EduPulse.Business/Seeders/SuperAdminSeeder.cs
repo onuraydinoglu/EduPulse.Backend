@@ -19,19 +19,43 @@ public class SuperAdminSeeder
 
     public async Task SeedAsync()
     {
-        var role = await _roleRepository.GetByNameAsync("superadmin");
-
-        if (role is null)
+        // 🔹 1. TÜM ROLLERİ EKLE
+        var roleNames = new List<string>
         {
-            role = new Role
-            {
-                Name = "superadmin",
-                IsActive = true
-            };
+            "superadmin",
+            "schooladmin",
+            "teacher",
+            "officer",
+            "student"
+        };
 
-            await _roleRepository.CreateAsync(role);
+        var roles = new Dictionary<string, Role>();
+
+        foreach (var roleName in roleNames)
+        {
+            var existingRole = await _roleRepository.GetByNameAsync(roleName);
+
+            if (existingRole is null)
+            {
+                var newRole = new Role
+                {
+                    Name = roleName,
+                    IsActive = true
+                };
+
+                await _roleRepository.CreateAsync(newRole);
+                roles[roleName] = newRole;
+            }
+            else
+            {
+                roles[roleName] = existingRole;
+            }
         }
 
+        // 🔹 2. SUPERADMIN ROLÜNÜ AL
+        var superAdminRole = roles["superadmin"];
+
+        // 🔹 3. SUPERADMIN USERLARI
         var admins = new List<User>
         {
             new User
@@ -41,8 +65,8 @@ public class SuperAdminSeeder
                 Email = "onur@gmail.com",
                 PhoneNumber = "05456565712",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-                RoleId = role.Id,
-                RoleName = role.Name,
+                RoleId = superAdminRole.Id,
+                RoleName = superAdminRole.Name,
                 SchoolId = null,
                 IsActive = true
             },
@@ -53,8 +77,8 @@ public class SuperAdminSeeder
                 Email = "nisa@gmail.com",
                 PhoneNumber = "05308414903",
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("123456"),
-                RoleId = role.Id,
-                RoleName = role.Name,
+                RoleId = superAdminRole.Id,
+                RoleName = superAdminRole.Name,
                 SchoolId = null,
                 IsActive = true
             }

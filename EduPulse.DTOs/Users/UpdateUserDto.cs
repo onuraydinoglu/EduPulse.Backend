@@ -10,8 +10,5 @@ public class UpdateUserDto
     public string Email { get; set; } = null!;
     public string PhoneNumber { get; set; } = null!;
 
-    public string RoleId { get; set; } = null!;
-    public string? SchoolId { get; set; }
-
     public bool IsActive { get; set; }
 }

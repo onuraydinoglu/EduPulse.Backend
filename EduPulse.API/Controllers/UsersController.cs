@@ -92,20 +92,95 @@ public class UsersController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
-
-    [HttpPut]
-    [Authorize(Roles = "superadmin,schooladmin")]
-    public async Task<IActionResult> Update(UpdateUserDto dto)
+    [HttpPut("teacher")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> UpdateTeacher(UpdateUserDto dto)
     {
-        var result = await _userService.UpdateForCurrentUserAsync(dto, RoleName, SchoolId);
+        var result = await _userService.UpdateForCurrentUserAsync(
+            dto,
+            RoleName,
+            SchoolId,
+            "teacher"
+        );
+
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPut("officer")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> UpdateOfficer(UpdateUserDto dto)
+    {
+        var result = await _userService.UpdateForCurrentUserAsync(
+            dto,
+            RoleName,
+            SchoolId,
+            "officer"
+        );
+
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpPut("student")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> UpdateStudent(UpdateUserDto dto)
+    {
+        var result = await _userService.UpdateForCurrentUserAsync(
+            dto,
+            RoleName,
+            SchoolId,
+            "student"
+        );
+
+        return StatusCode(result.StatusCode, result);
+    }
+    [HttpDelete("teacher/{id}")]
+    [Authorize(Roles = "schooladmin")]
+
+    public async Task<IActionResult> DeleteTeacher(string id)
+    {
+        var result = await _userService.DeleteForCurrentUserAsync(
+            id,
+            RoleName,
+            SchoolId,
+            "teacher"
+        );
+
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpDelete("officer/{id}")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> DeleteOfficer(string id)
+    {
+        var result = await _userService.DeleteForCurrentUserAsync(
+            id,
+            RoleName,
+            SchoolId,
+            "officer"
+        );
+
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpDelete("student/{id}")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> DeleteStudent(string id)
+    {
+        var result = await _userService.DeleteForCurrentUserAsync(
+            id,
+            RoleName,
+            SchoolId,
+            "student"
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "superadmin,schooladmin")]
+    [Authorize(Roles = "superadmin")]
     public async Task<IActionResult> Delete(string id)
     {
-        var result = await _userService.DeleteForCurrentUserAsync(id, RoleName, SchoolId);
+        var result = await _userService.DeleteAsync(id);
         return StatusCode(result.StatusCode, result);
     }
 }

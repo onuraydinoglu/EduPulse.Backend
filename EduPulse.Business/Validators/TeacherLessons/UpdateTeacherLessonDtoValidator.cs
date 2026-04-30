@@ -8,10 +8,7 @@ public class UpdateTeacherLessonDtoValidator : AbstractValidator<UpdateTeacherLe
     public UpdateTeacherLessonDtoValidator()
     {
         RuleFor(x => x.Id)
-            .NotEmpty().WithMessage("Kayıt Id boş olamaz.");
-
-        RuleFor(x => x.SchoolId)
-            .NotEmpty().WithMessage("Okul seçilmelidir.");
+            .NotEmpty().WithMessage("Id boş olamaz.");
 
         RuleFor(x => x.TeacherId)
             .NotEmpty().WithMessage("Öğretmen seçilmelidir.");

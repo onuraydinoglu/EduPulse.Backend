@@ -26,52 +26,55 @@ public class TeacherLessonRepository : ITeacherLessonRepository
             .ToListAsync();
     }
 
-    public async Task<List<TeacherLesson>> GetByTeacherIdAsync(string teacherId)
-    {
-        return await _teacherLessons
-            .Find(x => x.TeacherId == teacherId && x.IsActive)
-            .ToListAsync();
-    }
-
     public async Task<TeacherLesson?> GetByIdAsync(string id)
     {
-        return await _teacherLessons.Find(x => x.Id == id).FirstOrDefaultAsync();
-    }
-
-    public async Task<TeacherLesson?> GetByTeacherLessonAndClassroomAsync(
-    string teacherId,
-    string lessonId,
-    string classroomId)
-    {
         return await _teacherLessons
-            .Find(x =>
-                x.TeacherId == teacherId &&
-                x.LessonId == lessonId &&
-                x.ClassroomId == classroomId &&
-                x.IsActive)
+            .Find(x => x.Id == id && x.IsActive)
             .FirstOrDefaultAsync();
     }
 
-    public async Task CreateAsync(TeacherLesson teacherLesson)
+    public async Task<TeacherLesson?> GetDuplicateAsync(
+        string schoolId,
+        string teacherId,
+        string lessonId,
+        string classroomId)
+    {
+        return await _teacherLessons.Find(x =>
+            x.SchoolId == schoolId &&
+            x.TeacherId == teacherId &&
+            x.LessonId == lessonId &&
+            x.ClassroomId == classroomId &&
+            x.IsActive
+        ).FirstOrDefaultAsync();
+    }
+
+    public async Task<TeacherLesson?> GetByTeacherLessonAndClassroomAsync(
+        string teacherId,
+        string lessonId,
+        string classroomId)
+    {
+        return await _teacherLessons.Find(x =>
+            x.TeacherId == teacherId &&
+            x.LessonId == lessonId &&
+            x.ClassroomId == classroomId &&
+            x.IsActive
+        ).FirstOrDefaultAsync();
+    }
+
+    public async Task AddAsync(TeacherLesson teacherLesson)
     {
         await _teacherLessons.InsertOneAsync(teacherLesson);
     }
 
     public async Task UpdateAsync(TeacherLesson teacherLesson)
     {
-        teacherLesson.UpdatedDate = DateTime.UtcNow;
-
-        await _teacherLessons.ReplaceOneAsync(
-            x => x.Id == teacherLesson.Id,
-            teacherLesson
-        );
+        await _teacherLessons.ReplaceOneAsync(x => x.Id == teacherLesson.Id, teacherLesson);
     }
 
     public async Task DeleteAsync(string id)
     {
         var update = Builders<TeacherLesson>.Update
-            .Set(x => x.IsActive, false)
-            .Set(x => x.UpdatedDate, DateTime.UtcNow);
+            .Set(x => x.IsActive, false);
 
         await _teacherLessons.UpdateOneAsync(x => x.Id == id, update);
     }

@@ -7,9 +7,6 @@ public class CreateTeacherLessonDtoValidator : AbstractValidator<CreateTeacherLe
 {
     public CreateTeacherLessonDtoValidator()
     {
-        RuleFor(x => x.SchoolId)
-            .NotEmpty().WithMessage("Okul seçilmelidir.");
-
         RuleFor(x => x.TeacherId)
             .NotEmpty().WithMessage("Öğretmen seçilmelidir.");
 

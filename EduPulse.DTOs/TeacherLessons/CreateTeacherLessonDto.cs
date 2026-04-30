@@ -2,8 +2,6 @@
 
 public class CreateTeacherLessonDto
 {
-    public string SchoolId { get; set; } = null!;
-
     public string TeacherId { get; set; } = null!;
     public string LessonId { get; set; } = null!;
     public string ClassroomId { get; set; } = null!;

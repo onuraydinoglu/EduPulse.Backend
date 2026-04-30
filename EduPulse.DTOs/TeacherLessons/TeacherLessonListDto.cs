@@ -3,11 +3,10 @@
 public class TeacherLessonListDto
 {
     public string Id { get; set; } = null!;
-
     public string SchoolId { get; set; } = null!;
 
     public string TeacherId { get; set; } = null!;
-    public string TeacherName { get; set; } = null!;
+    public string TeacherFullName { get; set; } = null!;
 
     public string LessonId { get; set; } = null!;
     public string LessonName { get; set; } = null!;

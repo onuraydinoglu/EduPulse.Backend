@@ -26,32 +26,46 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email)
     {
-        return await _users.Find(x => x.Email == email).FirstOrDefaultAsync();
+        var normalizedEmail = email.Trim().ToLower();
+
+        return await _users
+            .Find(x => x.Email.ToLower() == normalizedEmail)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<List<User>> GetBySchoolIdAsync(string schoolId)
     {
-        return await _users.Find(x => x.SchoolId == schoolId).ToListAsync();
+        return await _users
+            .Find(x => x.SchoolId == schoolId)
+            .ToListAsync();
     }
 
     public async Task<List<User>> GetByRoleNameAsync(string roleName)
     {
+        var normalizedRoleName = roleName.Trim().ToLower();
+
         return await _users
-            .Find(x => x.RoleName == roleName)
+            .Find(x => x.RoleName.ToLower() == normalizedRoleName)
             .ToListAsync();
     }
 
     public async Task<List<User>> GetBySchoolIdAndRoleNameAsync(string schoolId, string roleName)
     {
+        var normalizedRoleName = roleName.Trim().ToLower();
+
         return await _users
-            .Find(x => x.SchoolId == schoolId && x.RoleName == roleName)
+            .Find(x =>
+                x.SchoolId == schoolId &&
+                x.RoleName.ToLower() == normalizedRoleName)
             .ToListAsync();
     }
 
     public async Task<bool> ExistsSchoolAdminAsync(string schoolId)
     {
         return await _users
-            .Find(x => x.SchoolId == schoolId && x.RoleName == "schooladmin")
+            .Find(x =>
+                x.SchoolId == schoolId &&
+                x.RoleName.ToLower() == "schooladmin")
             .AnyAsync();
     }
 
@@ -69,4 +83,6 @@ public class UserRepository : IUserRepository
     {
         await _users.DeleteOneAsync(x => x.Id == id);
     }
+
+
 }

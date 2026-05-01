@@ -30,6 +30,13 @@ public class TeacherRepository : ITeacherRepository
             .ToListAsync();
     }
 
+    public async Task<List<Teacher>> GetActiveBySchoolIdAsync(string schoolId)
+    {
+        return await _teachers
+            .Find(x => x.SchoolId == schoolId && x.IsActive)
+            .ToListAsync();
+    }
+
     public async Task<Teacher?> GetByIdAsync(string id)
     {
         return await _teachers

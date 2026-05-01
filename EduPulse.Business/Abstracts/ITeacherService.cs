@@ -9,6 +9,8 @@ public interface ITeacherService
         string? currentRoleName,
         string? currentSchoolId);
 
+    Task<Result<List<TeacherListDto>>> GetActiveBySchoolIdAsync(string schoolId);
+
     Task<Result<TeacherListDto>> GetByIdForCurrentUserAsync(
         string id,
         string? currentRoleName,

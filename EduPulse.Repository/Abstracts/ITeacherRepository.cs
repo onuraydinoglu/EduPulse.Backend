@@ -6,6 +6,7 @@ public interface ITeacherRepository
 {
     Task<List<Teacher>> GetAllAsync();
     Task<List<Teacher>> GetBySchoolIdAsync(string schoolId);
+    Task<List<Teacher>> GetActiveBySchoolIdAsync(string schoolId);
 
     Task<Teacher?> GetByIdAsync(string id);
     Task<Teacher?> GetByUserIdAsync(string userId);

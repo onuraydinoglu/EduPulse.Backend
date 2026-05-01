@@ -29,6 +29,17 @@ public class TeachersController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    [HttpGet("active")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> GetActive()
+    {
+        if (string.IsNullOrWhiteSpace(SchoolId))
+            return BadRequest("Okul bilgisi bulunamadı.");
+
+        var result = await _teacherService.GetActiveBySchoolIdAsync(SchoolId);
+        return StatusCode(result.StatusCode, result);
+    }
+
     [HttpGet("{id}")]
     [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> GetById(string id)

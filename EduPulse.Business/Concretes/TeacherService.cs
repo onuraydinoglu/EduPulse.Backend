@@ -59,6 +59,32 @@ public class TeacherService : ITeacherService
         return Result<List<TeacherListDto>>.Success(result, "Öğretmenler başarıyla listelendi.");
     }
 
+    public async Task<Result<List<TeacherListDto>>> GetActiveBySchoolIdAsync(string schoolId)
+    {
+        if (string.IsNullOrWhiteSpace(schoolId))
+            return Result<List<TeacherListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
+
+        var teachers = await _teacherRepository.GetActiveBySchoolIdAsync(schoolId);
+
+        var result = new List<TeacherListDto>();
+
+        foreach (var teacher in teachers)
+        {
+            var user = await _userRepository.GetByIdAsync(teacher.UserId);
+
+            if (user is null)
+                continue;
+
+            if (!user.IsActive)
+                continue;
+
+            var dto = await MapToListDtoAsync(teacher, user);
+            result.Add(dto);
+        }
+
+        return Result<List<TeacherListDto>>.Success(result, "Aktif öğretmenler başarıyla listelendi.");
+    }
+
     public async Task<Result<TeacherListDto>> GetByIdForCurrentUserAsync(string id, string? currentRoleName, string? currentSchoolId)
     {
         var teacher = await _teacherRepository.GetByIdAsync(id);

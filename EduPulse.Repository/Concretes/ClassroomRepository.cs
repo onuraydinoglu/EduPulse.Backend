@@ -16,17 +16,27 @@ public class ClassroomRepository : IClassroomRepository
 
     public async Task<List<Classroom>> GetAllAsync()
     {
-        return await _classrooms.Find(x => true).ToListAsync();
+        return await _classrooms
+            .Find(x => true)
+            .SortBy(x => x.Grade)
+            .ThenBy(x => x.Section)
+            .ToListAsync();
     }
 
     public async Task<List<Classroom>> GetBySchoolIdAsync(string schoolId)
     {
-        return await _classrooms.Find(x => x.SchoolId == schoolId).ToListAsync();
+        return await _classrooms
+            .Find(x => x.SchoolId == schoolId)
+            .SortBy(x => x.Grade)
+            .ThenBy(x => x.Section)
+            .ToListAsync();
     }
 
     public async Task<Classroom?> GetByIdAsync(string id)
     {
-        return await _classrooms.Find(x => x.Id == id).FirstOrDefaultAsync();
+        return await _classrooms
+            .Find(x => x.Id == id)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<Classroom?> GetBySchoolIdAndTeacherIdAsync(string schoolId, string teacherId)
@@ -39,9 +49,9 @@ public class ClassroomRepository : IClassroomRepository
     }
 
     public async Task<Classroom?> GetBySchoolIdAndTeacherIdExceptClassroomIdAsync(
-    string schoolId,
-    string teacherId,
-    string classroomId)
+        string schoolId,
+        string teacherId,
+        string classroomId)
     {
         return await _classrooms
             .Find(x =>
@@ -63,12 +73,20 @@ public class ClassroomRepository : IClassroomRepository
 
     public async Task CreateAsync(Classroom classroom)
     {
+        classroom.CreatedDate = DateTime.UtcNow;
+        classroom.UpdatedDate = null;
+
         await _classrooms.InsertOneAsync(classroom);
     }
 
     public async Task UpdateAsync(Classroom classroom)
     {
-        await _classrooms.ReplaceOneAsync(x => x.Id == classroom.Id, classroom);
+        classroom.UpdatedDate = DateTime.UtcNow;
+
+        await _classrooms.ReplaceOneAsync(
+            x => x.Id == classroom.Id,
+            classroom
+        );
     }
 
     public async Task DeleteAsync(string id)

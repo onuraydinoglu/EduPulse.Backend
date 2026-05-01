@@ -16,13 +16,17 @@ public class TeacherRepository : ITeacherRepository
 
     public async Task<List<Teacher>> GetAllAsync()
     {
-        return await _teachers.Find(_ => true).ToListAsync();
+        return await _teachers
+            .Find(x => true)
+            .SortByDescending(x => x.CreatedDate)
+            .ToListAsync();
     }
 
     public async Task<List<Teacher>> GetBySchoolIdAsync(string schoolId)
     {
         return await _teachers
             .Find(x => x.SchoolId == schoolId)
+            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 
@@ -42,6 +46,9 @@ public class TeacherRepository : ITeacherRepository
 
     public async Task CreateAsync(Teacher teacher)
     {
+        teacher.CreatedDate = DateTime.UtcNow;
+        teacher.UpdatedDate = null;
+
         await _teachers.InsertOneAsync(teacher);
     }
 

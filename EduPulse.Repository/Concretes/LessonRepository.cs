@@ -17,7 +17,8 @@ public class LessonRepository : ILessonRepository
     public async Task<List<Lesson>> GetAllAsync()
     {
         return await _lessons
-            .Find(_ => true)
+            .Find(x => true)
+            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 
@@ -25,6 +26,7 @@ public class LessonRepository : ILessonRepository
     {
         return await _lessons
             .Find(x => x.SchoolId == schoolId)
+            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 
@@ -50,6 +52,9 @@ public class LessonRepository : ILessonRepository
 
     public async Task CreateAsync(Lesson lesson)
     {
+        lesson.CreatedDate = DateTime.UtcNow;
+        lesson.UpdatedDate = null;
+
         await _lessons.InsertOneAsync(lesson);
     }
 

@@ -58,14 +58,23 @@ public class UserService : IUserService
             RoleId = user.RoleId,
             RoleName = user.RoleName,
             SchoolId = user.SchoolId,
-            IsActive = user.IsActive
+            IsActive = user.IsActive,
         };
+    }
+
+    private static List<UserListDto> MapToSortedListDto(List<User> users)
+    {
+        return users
+            .OrderByDescending(x => x.CreatedDate)
+            .Select(MapToListDto)
+            .ToList();
     }
 
     public async Task<Result<List<UserListDto>>> GetAllAsync()
     {
         var users = await _userRepository.GetAllAsync();
-        return Result<List<UserListDto>>.Success(users.Select(MapToListDto).ToList());
+
+        return Result<List<UserListDto>>.Success(MapToSortedListDto(users));
     }
 
     public async Task<Result<UserListDto>> GetByIdAsync(string id)
@@ -81,7 +90,17 @@ public class UserService : IUserService
     public async Task<Result<List<UserListDto>>> GetBySchoolIdAsync(string schoolId)
     {
         var users = await _userRepository.GetBySchoolIdAsync(schoolId);
-        return Result<List<UserListDto>>.Success(users.Select(MapToListDto).ToList());
+
+        return Result<List<UserListDto>>.Success(MapToSortedListDto(users));
+    }
+
+    public async Task<Result<List<UserListDto>>> GetTeachersAsync(string? schoolId)
+    {
+        var users = string.IsNullOrWhiteSpace(schoolId)
+            ? await _userRepository.GetByRoleNameAsync("teacher")
+            : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "teacher");
+
+        return Result<List<UserListDto>>.Success(MapToSortedListDto(users));
     }
 
     public async Task<Result<List<UserListDto>>> GetOfficersAsync(string? schoolId)
@@ -90,7 +109,16 @@ public class UserService : IUserService
             ? await _userRepository.GetByRoleNameAsync("officer")
             : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "officer");
 
-        return Result<List<UserListDto>>.Success(users.Select(MapToListDto).ToList());
+        return Result<List<UserListDto>>.Success(MapToSortedListDto(users));
+    }
+
+    public async Task<Result<List<UserListDto>>> GetStudentsAsync(string? schoolId)
+    {
+        var users = string.IsNullOrWhiteSpace(schoolId)
+            ? await _userRepository.GetByRoleNameAsync("student")
+            : await _userRepository.GetBySchoolIdAndRoleNameAsync(schoolId, "student");
+
+        return Result<List<UserListDto>>.Success(MapToSortedListDto(users));
     }
 
     public async Task<Result<List<UserListDto>>> GetAllForCurrentUserAsync(
@@ -233,10 +261,10 @@ public class UserService : IUserService
     }
 
     public async Task<Result> UpdateForCurrentUserAsync(
-    UpdateUserDto dto,
-    string? currentRoleName,
-    string? currentSchoolId,
-    string targetRoleName)
+        UpdateUserDto dto,
+        string? currentRoleName,
+        string? currentSchoolId,
+        string targetRoleName)
     {
         currentRoleName = currentRoleName?.Trim().ToLower();
         targetRoleName = targetRoleName.Trim().ToLower();
@@ -265,10 +293,10 @@ public class UserService : IUserService
     }
 
     public async Task<Result> DeleteForCurrentUserAsync(
-    string id,
-    string? currentRoleName,
-    string? currentSchoolId,
-    string targetRoleName)
+        string id,
+        string? currentRoleName,
+        string? currentSchoolId,
+        string targetRoleName)
     {
         currentRoleName = currentRoleName?.Trim().ToLower();
         targetRoleName = targetRoleName.Trim().ToLower();

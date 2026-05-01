@@ -16,13 +16,17 @@ public class StudentRepository : IStudentRepository
 
     public async Task<List<Student>> GetAllAsync()
     {
-        return await _students.Find(_ => true).ToListAsync();
+        return await _students
+            .Find(x => true)
+            .SortByDescending(x => x.CreatedDate)
+            .ToListAsync();
     }
 
     public async Task<List<Student>> GetBySchoolIdAsync(string schoolId)
     {
         return await _students
             .Find(x => x.SchoolId == schoolId)
+            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 
@@ -30,17 +34,22 @@ public class StudentRepository : IStudentRepository
     {
         return await _students
             .Find(x => x.ClassroomId == classroomId)
+            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 
     public async Task<Student?> GetByIdAsync(string id)
     {
-        return await _students.Find(x => x.Id == id).FirstOrDefaultAsync();
+        return await _students
+            .Find(x => x.Id == id)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<Student?> GetByUserIdAsync(string userId)
     {
-        return await _students.Find(x => x.UserId == userId).FirstOrDefaultAsync();
+        return await _students
+            .Find(x => x.UserId == userId)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<Student?> GetBySchoolIdAndStudentNumberAsync(
@@ -55,13 +64,20 @@ public class StudentRepository : IStudentRepository
 
     public async Task CreateAsync(Student student)
     {
+        student.CreatedDate = DateTime.UtcNow;
+        student.UpdatedDate = null;
+
         await _students.InsertOneAsync(student);
     }
 
     public async Task UpdateAsync(Student student)
     {
         student.UpdatedDate = DateTime.UtcNow;
-        await _students.ReplaceOneAsync(x => x.Id == student.Id, student);
+
+        await _students.ReplaceOneAsync(
+            x => x.Id == student.Id,
+            student
+        );
     }
 
     public async Task DeleteAsync(string id)

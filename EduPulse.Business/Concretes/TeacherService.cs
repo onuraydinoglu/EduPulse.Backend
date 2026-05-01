@@ -41,7 +41,10 @@ public class TeacherService : ITeacherService
         if (string.IsNullOrWhiteSpace(currentSchoolId))
             return Result<List<TeacherListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
 
-        var teachers = await _teacherRepository.GetBySchoolIdAsync(currentSchoolId);
+        var teachers = (await _teacherRepository.GetBySchoolIdAsync(currentSchoolId))
+            .OrderByDescending(x => x.CreatedDate)
+            .ToList();
+
         var result = new List<TeacherListDto>();
 
         foreach (var teacher in teachers)

@@ -185,14 +185,17 @@ public class TeacherLessonService : ITeacherLessonService
             return Result.Failure("Bu kaydı güncelleme yetkiniz yok.", 403);
 
         var classroom = await _classroomRepository.GetByIdAsync(dto.ClassroomId);
-        if (classroom == null || classroom.SchoolId != schoolId)    
+
+        if (classroom == null || classroom.SchoolId != schoolId)
             return Result.Failure("Sınıf bulunamadı.", 404);
 
         var lesson = await _lessonRepository.GetByIdAsync(dto.LessonId);
+
         if (lesson == null || lesson.SchoolId != schoolId)
             return Result.Failure("Ders bulunamadı.", 404);
 
         var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
+
         if (teacher == null || teacher.SchoolId != schoolId)
             return Result.Failure("Öğretmen bulunamadı.", 404);
 
@@ -200,7 +203,8 @@ public class TeacherLessonService : ITeacherLessonService
             schoolId,
             dto.TeacherId,
             dto.LessonId,
-            dto.ClassroomId);
+            dto.ClassroomId
+        );
 
         if (duplicate != null && duplicate.Id != dto.Id)
             return Result.Failure("Bu öğretmen bu sınıfta bu derse zaten atanmış.", 400);
@@ -208,6 +212,7 @@ public class TeacherLessonService : ITeacherLessonService
         teacherLesson.TeacherId = dto.TeacherId;
         teacherLesson.LessonId = dto.LessonId;
         teacherLesson.ClassroomId = dto.ClassroomId;
+        teacherLesson.IsActive = dto.IsActive;
 
         await _teacherLessonRepository.UpdateAsync(teacherLesson);
 

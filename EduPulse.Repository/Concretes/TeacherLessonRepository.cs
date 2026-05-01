@@ -16,20 +16,22 @@ public class TeacherLessonRepository : ITeacherLessonRepository
 
     public async Task<List<TeacherLesson>> GetAllAsync()
     {
-        return await _teacherLessons.Find(x => x.IsActive).ToListAsync();
+        return await _teacherLessons
+            .Find(_ => true)
+            .ToListAsync();
     }
 
     public async Task<List<TeacherLesson>> GetBySchoolIdAsync(string schoolId)
     {
         return await _teacherLessons
-            .Find(x => x.SchoolId == schoolId && x.IsActive)
+            .Find(x => x.SchoolId == schoolId)
             .ToListAsync();
     }
 
     public async Task<TeacherLesson?> GetByIdAsync(string id)
     {
         return await _teacherLessons
-            .Find(x => x.Id == id && x.IsActive)
+            .Find(x => x.Id == id)
             .FirstOrDefaultAsync();
     }
 
@@ -39,13 +41,14 @@ public class TeacherLessonRepository : ITeacherLessonRepository
         string lessonId,
         string classroomId)
     {
-        return await _teacherLessons.Find(x =>
-            x.SchoolId == schoolId &&
-            x.TeacherId == teacherId &&
-            x.LessonId == lessonId &&
-            x.ClassroomId == classroomId &&
-            x.IsActive
-        ).FirstOrDefaultAsync();
+        return await _teacherLessons
+            .Find(x =>
+                x.SchoolId == schoolId &&
+                x.TeacherId == teacherId &&
+                x.LessonId == lessonId &&
+                x.ClassroomId == classroomId &&
+                x.IsActive)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<TeacherLesson?> GetByTeacherLessonAndClassroomAsync(
@@ -53,12 +56,13 @@ public class TeacherLessonRepository : ITeacherLessonRepository
         string lessonId,
         string classroomId)
     {
-        return await _teacherLessons.Find(x =>
-            x.TeacherId == teacherId &&
-            x.LessonId == lessonId &&
-            x.ClassroomId == classroomId &&
-            x.IsActive
-        ).FirstOrDefaultAsync();
+        return await _teacherLessons
+            .Find(x =>
+                x.TeacherId == teacherId &&
+                x.LessonId == lessonId &&
+                x.ClassroomId == classroomId &&
+                x.IsActive)
+            .FirstOrDefaultAsync();
     }
 
     public async Task AddAsync(TeacherLesson teacherLesson)
@@ -68,7 +72,10 @@ public class TeacherLessonRepository : ITeacherLessonRepository
 
     public async Task UpdateAsync(TeacherLesson teacherLesson)
     {
-        await _teacherLessons.ReplaceOneAsync(x => x.Id == teacherLesson.Id, teacherLesson);
+        await _teacherLessons.ReplaceOneAsync(
+            x => x.Id == teacherLesson.Id,
+            teacherLesson
+        );
     }
 
     public async Task DeleteAsync(string id)

@@ -17,14 +17,14 @@ public class LessonRepository : ILessonRepository
     public async Task<List<Lesson>> GetAllAsync()
     {
         return await _lessons
-            .Find(x => x.IsActive)
+            .Find(_ => true)
             .ToListAsync();
     }
 
     public async Task<List<Lesson>> GetBySchoolIdAsync(string schoolId)
     {
         return await _lessons
-            .Find(x => x.SchoolId == schoolId && x.IsActive)
+            .Find(x => x.SchoolId == schoolId)
             .ToListAsync();
     }
 
@@ -35,13 +35,16 @@ public class LessonRepository : ILessonRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task<Lesson?> GetBySchoolIdAndNormalizedNameAsync(string schoolId, string normalizedName)
+    public async Task<Lesson?> GetBySchoolIdAndNormalizedNameAsync(
+        string schoolId,
+        string normalizedName
+    )
     {
         return await _lessons
             .Find(x =>
                 x.SchoolId == schoolId &&
-                x.NormalizedName == normalizedName &&
-                x.IsActive)
+                x.NormalizedName == normalizedName
+            )
             .FirstOrDefaultAsync();
     }
 

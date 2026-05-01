@@ -106,7 +106,7 @@ public class LessonService : ILessonService
 
         var lesson = await _lessonRepository.GetByIdAsync(dto.Id);
 
-        if (lesson is null || !lesson.IsActive)
+        if (lesson is null)
             return Result.Failure("Ders bulunamadı.", 404);
 
         if (lesson.SchoolId != schoolId)

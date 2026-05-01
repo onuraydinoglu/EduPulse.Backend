@@ -16,20 +16,20 @@ public class StudentRepository : IStudentRepository
 
     public async Task<List<Student>> GetAllAsync()
     {
-        return await _students.Find(x => x.IsActive).ToListAsync();
+        return await _students.Find(_ => true).ToListAsync();
     }
 
     public async Task<List<Student>> GetBySchoolIdAsync(string schoolId)
     {
         return await _students
-            .Find(x => x.SchoolId == schoolId && x.IsActive)
+            .Find(x => x.SchoolId == schoolId)
             .ToListAsync();
     }
 
     public async Task<List<Student>> GetByClassroomIdAsync(string classroomId)
     {
         return await _students
-            .Find(x => x.ClassroomId == classroomId && x.IsActive)
+            .Find(x => x.ClassroomId == classroomId)
             .ToListAsync();
     }
 
@@ -43,7 +43,10 @@ public class StudentRepository : IStudentRepository
         return await _students.Find(x => x.UserId == userId).FirstOrDefaultAsync();
     }
 
-    public async Task<Student?> GetBySchoolIdAndStudentNumberAsync(string schoolId, string studentNumber)
+    public async Task<Student?> GetBySchoolIdAndStudentNumberAsync(
+        string schoolId,
+        string studentNumber
+    )
     {
         return await _students
             .Find(x => x.SchoolId == schoolId && x.StudentNumber == studentNumber)

@@ -3,6 +3,8 @@ using EduPulse.API.Middlewares;
 using EduPulse.Business.Abstracts;
 using EduPulse.Business.Concretes;
 using EduPulse.Business.Seeders;
+using EduPulse.Business.Validators.ClubMembers;
+using EduPulse.Business.Validators.Clubs;
 using EduPulse.Business.Validators.Students;
 using EduPulse.Repository.Abstracts;
 using EduPulse.Repository.Concretes;
@@ -55,11 +57,16 @@ builder.Services.AddScoped<IParentService, ParentService>();
 builder.Services.AddScoped<IStudentGradeRepository, StudentGradeRepository>();
 builder.Services.AddScoped<IStudentGradeService, StudentGradeService>();
 
+builder.Services.AddScoped<IClubRepository, ClubRepository>();
+builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
+builder.Services.AddScoped<IClubService, ClubService>();
+
 builder.Services.AddValidatorsFromAssemblyContaining<CreateStudentDtoValidator>();
 
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
+
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme

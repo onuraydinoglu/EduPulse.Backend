@@ -1,4 +1,6 @@
 ﻿using EduPulse.Entities.Classrooms;
+using EduPulse.Entities.ClubMembers;
+using EduPulse.Entities.Clubs;
 using EduPulse.Entities.Lessons;
 using EduPulse.Entities.Parents;
 using EduPulse.Entities.Roles;
@@ -25,11 +27,12 @@ public class MongoDbContext
 
         CreateIndexes();
     }
+
     public IMongoCollection<Role> Roles =>
-    _database.GetCollection<Role>("Roles");
+        _database.GetCollection<Role>("Roles");
 
     public IMongoCollection<User> Users =>
-    _database.GetCollection<User>("Users");
+        _database.GetCollection<User>("Users");
 
     public IMongoCollection<School> Schools =>
         _database.GetCollection<School>("Schools");
@@ -55,6 +58,12 @@ public class MongoDbContext
     public IMongoCollection<StudentGrade> StudentGrades =>
         _database.GetCollection<StudentGrade>("StudentGrades");
 
+    public IMongoCollection<Club> Clubs =>
+        _database.GetCollection<Club>("Clubs");
+
+    public IMongoCollection<ClubMember> ClubMembers =>
+        _database.GetCollection<ClubMember>("ClubMembers");
+
     private void CreateIndexes()
     {
         CreateUserIndexes();
@@ -66,6 +75,8 @@ public class MongoDbContext
         CreateParentIndexes();
         CreateTeacherLessonIndexes();
         CreateStudentGradeIndexes();
+        CreateClubIndexes();
+        CreateClubMemberIndexes();
     }
 
     private void CreateUserIndexes()
@@ -90,14 +101,14 @@ public class MongoDbContext
                 Name = "UX_Schools_Email"
             }));
 
-       Schools.Indexes.CreateOne(new CreateIndexModel<School>(
-           Builders<School>.IndexKeys.Ascending(x => x.PhoneNumber),
-           new CreateIndexOptions
-           {
-               Unique = true,
-               Sparse = true,
-               Name = "UX_Schools_PhoneNumber"
-           }));
+        Schools.Indexes.CreateOne(new CreateIndexModel<School>(
+            Builders<School>.IndexKeys.Ascending(x => x.PhoneNumber),
+            new CreateIndexOptions
+            {
+                Unique = true,
+                Sparse = true,
+                Name = "UX_Schools_PhoneNumber"
+            }));
     }
 
     private void CreateLessonIndexes()
@@ -126,8 +137,7 @@ public class MongoDbContext
     private void CreateTeacherIndexes()
     {
         Teachers.Indexes.CreateOne(new CreateIndexModel<Teacher>(
-            Builders<Teacher>.IndexKeys
-                .Ascending(x => x.UserId),
+            Builders<Teacher>.IndexKeys.Ascending(x => x.UserId),
             new CreateIndexOptions
             {
                 Unique = true,
@@ -190,8 +200,7 @@ public class MongoDbContext
             }));
 
         Students.Indexes.CreateOne(new CreateIndexModel<Student>(
-            Builders<Student>.IndexKeys
-                .Ascending(x => x.UserId),
+            Builders<Student>.IndexKeys.Ascending(x => x.UserId),
             new CreateIndexOptions
             {
                 Unique = true,
@@ -294,6 +303,71 @@ public class MongoDbContext
             new CreateIndexOptions
             {
                 Name = "IX_StudentGrades_SchoolId_IsActive"
+            }));
+    }
+
+    private void CreateClubIndexes()
+    {
+        Clubs.Indexes.CreateOne(new CreateIndexModel<Club>(
+            Builders<Club>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.NormalizedName),
+            new CreateIndexOptions<Club>
+            {
+                Unique = true,
+                Name = "UX_Clubs_SchoolId_NormalizedName_Active",
+                PartialFilterExpression = Builders<Club>.Filter.Eq(x => x.IsActive, true)
+            }));
+
+        Clubs.Indexes.CreateOne(new CreateIndexModel<Club>(
+            Builders<Club>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_Clubs_SchoolId_IsActive"
+            }));
+
+        Clubs.Indexes.CreateOne(new CreateIndexModel<Club>(
+            Builders<Club>.IndexKeys
+                .Ascending(x => x.AdvisorTeacherId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_Clubs_AdvisorTeacherId_IsActive"
+            }));
+    }
+
+    private void CreateClubMemberIndexes()
+    {
+        ClubMembers.Indexes.CreateOne(new CreateIndexModel<ClubMember>(
+            Builders<ClubMember>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.ClubId)
+                .Ascending(x => x.StudentId),
+            new CreateIndexOptions<ClubMember>
+            {
+                Unique = true,
+                Name = "UX_ClubMembers_SchoolId_ClubId_StudentId_Active",
+                PartialFilterExpression = Builders<ClubMember>.Filter.Eq(x => x.IsActive, true)
+            }));
+
+        ClubMembers.Indexes.CreateOne(new CreateIndexModel<ClubMember>(
+            Builders<ClubMember>.IndexKeys
+                .Ascending(x => x.ClubId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_ClubMembers_ClubId_IsActive"
+            }));
+
+        ClubMembers.Indexes.CreateOne(new CreateIndexModel<ClubMember>(
+            Builders<ClubMember>.IndexKeys
+                .Ascending(x => x.StudentId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_ClubMembers_StudentId_IsActive"
             }));
     }
 }

@@ -345,11 +345,19 @@ public class MongoDbContext
                 .Ascending(x => x.SchoolId)
                 .Ascending(x => x.ClubId)
                 .Ascending(x => x.StudentId),
-            new CreateIndexOptions<ClubMember>
+            new CreateIndexOptions
             {
                 Unique = true,
-                Name = "UX_ClubMembers_SchoolId_ClubId_StudentId_Active",
-                PartialFilterExpression = Builders<ClubMember>.Filter.Eq(x => x.IsActive, true)
+                Name = "UX_ClubMembers_SchoolId_ClubId_StudentId"
+            }));
+
+        ClubMembers.Indexes.CreateOne(new CreateIndexModel<ClubMember>(
+            Builders<ClubMember>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_ClubMembers_SchoolId_IsActive"
             }));
 
         ClubMembers.Indexes.CreateOne(new CreateIndexModel<ClubMember>(

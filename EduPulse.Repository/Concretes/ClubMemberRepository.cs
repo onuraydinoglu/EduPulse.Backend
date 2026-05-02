@@ -14,6 +14,20 @@ public class ClubMemberRepository : IClubMemberRepository
         _clubMembers = context.ClubMembers;
     }
 
+    public async Task<List<ClubMember>> GetAllAsync()
+    {
+        return await _clubMembers
+            .Find(x => x.IsActive)
+            .ToListAsync();
+    }
+
+    public async Task<List<ClubMember>> GetBySchoolIdAsync(string schoolId)
+    {
+        return await _clubMembers
+            .Find(x => x.SchoolId == schoolId && x.IsActive)
+            .ToListAsync();
+    }
+
     public async Task<List<ClubMember>> GetByClubIdAsync(string clubId)
     {
         return await _clubMembers
@@ -28,22 +42,20 @@ public class ClubMemberRepository : IClubMemberRepository
             .ToListAsync();
     }
 
-    public async Task<ClubMember?> GetActiveByClubIdAndStudentIdAsync(string clubId, string studentId)
+    public async Task<ClubMember?> GetByIdAsync(string id)
+    {
+        return await _clubMembers
+            .Find(x => x.Id == id)
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<ClubMember?> GetByClubIdAndStudentIdAsync(string clubId, string studentId)
     {
         return await _clubMembers
             .Find(x =>
                 x.ClubId == clubId &&
                 x.StudentId == studentId &&
                 x.IsActive)
-            .FirstOrDefaultAsync();
-    }
-
-    public async Task<ClubMember?> GetAnyByClubIdAndStudentIdAsync(string clubId, string studentId)
-    {
-        return await _clubMembers
-            .Find(x =>
-                x.ClubId == clubId &&
-                x.StudentId == studentId)
             .FirstOrDefaultAsync();
     }
 
@@ -58,29 +70,14 @@ public class ClubMemberRepository : IClubMemberRepository
         await _clubMembers.InsertOneAsync(clubMember);
     }
 
-    public async Task ReactivateAsync(string clubId, string studentId)
-    {
-        var update = Builders<ClubMember>.Update
-            .Set(x => x.IsActive, true)
-            .Set(x => x.UpdatedDate, DateTime.UtcNow);
-
-        await _clubMembers.UpdateOneAsync(
-            x => x.ClubId == clubId && x.StudentId == studentId,
-            update
-        );
-    }
-
-    public async Task DeleteAsync(string clubId, string studentId)
+    public async Task DeleteAsync(string id)
     {
         var update = Builders<ClubMember>.Update
             .Set(x => x.IsActive, false)
             .Set(x => x.UpdatedDate, DateTime.UtcNow);
 
         await _clubMembers.UpdateOneAsync(
-            x =>
-                x.ClubId == clubId &&
-                x.StudentId == studentId &&
-                x.IsActive,
+            x => x.Id == id && x.IsActive,
             update
         );
     }

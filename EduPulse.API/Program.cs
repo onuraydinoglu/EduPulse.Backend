@@ -58,8 +58,10 @@ builder.Services.AddScoped<IStudentGradeRepository, StudentGradeRepository>();
 builder.Services.AddScoped<IStudentGradeService, StudentGradeService>();
 
 builder.Services.AddScoped<IClubRepository, ClubRepository>();
-builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
 builder.Services.AddScoped<IClubService, ClubService>();
+
+builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
+builder.Services.AddScoped<IClubMemberService, ClubMemberService>();
 
 builder.Services.AddValidatorsFromAssemblyContaining<CreateStudentDtoValidator>();
 

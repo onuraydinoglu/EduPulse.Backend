@@ -3,14 +3,16 @@ using FluentValidation;
 
 namespace EduPulse.Business.Validators.ClubMembers;
 
-public class AddClubMemberDtoValidator : AbstractValidator<AddClubMemberDto>
+public class CreateClubMemberDtoValidator : AbstractValidator<CreateClubMemberDto>
 {
-    public AddClubMemberDtoValidator()
+    public CreateClubMemberDtoValidator()
     {
         RuleFor(x => x.ClubId)
-            .NotEmpty().WithMessage("Kulüp seçilmelidir.");
+            .NotEmpty()
+            .WithMessage("Kulüp seçiniz.");
 
         RuleFor(x => x.StudentId)
-            .NotEmpty().WithMessage("Öğrenci seçilmelidir.");
+            .NotEmpty()
+            .WithMessage("Öğrenci seçiniz.");
     }
 }

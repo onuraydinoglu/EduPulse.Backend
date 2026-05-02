@@ -1,55 +1,95 @@
 ﻿using EduPulse.Business.Abstracts;
 using EduPulse.DTOs.ClubMembers;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace EduPulse.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
 public class ClubMembersController : ControllerBase
 {
-    private readonly IClubService _clubService;
+    private readonly IClubMemberService _clubMemberService;
 
-    public ClubMembersController(IClubService clubService)
+    public ClubMembersController(IClubMemberService clubMemberService)
     {
-        _clubService = clubService;
+        _clubMemberService = clubMemberService;
     }
 
-    private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
-    private string? SchoolId => User.FindFirst("schoolId")?.Value;
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var roleName = User.FindFirst("roleName")?.Value;
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = await _clubMemberService.GetAllForCurrentUserAsync(roleName, schoolId);
+
+        if (!result.IsSuccess)
+            return StatusCode(result.StatusCode, result);
+
+        return Ok(result);
+    }
 
     [HttpGet("club/{clubId}")]
-    [Authorize(Roles = "schooladmin,teacher")]
-    public async Task<IActionResult> GetMembersByClubId(string clubId)
+    public async Task<IActionResult> GetByClubId(string clubId)
     {
-        var result = await _clubService.GetMembersByClubIdAsync(clubId, RoleName, SchoolId);
-        return StatusCode(result.StatusCode, result);
+        var roleName = User.FindFirst("roleName")?.Value;
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = await _clubMemberService.GetByClubIdForCurrentUserAsync(
+            clubId,
+            roleName,
+            schoolId
+        );
+
+        if (!result.IsSuccess)
+            return StatusCode(result.StatusCode, result);
+
+        return Ok(result);
     }
 
-    [HttpGet("student/{studentId}/clubs")]
-    [Authorize(Roles = "schooladmin,teacher")]
-    public async Task<IActionResult> GetClubsByStudentId(string studentId)
+    [HttpGet("student/{studentId}")]
+    public async Task<IActionResult> GetByStudentId(string studentId)
     {
-        var result = await _clubService.GetClubsByStudentIdAsync(studentId, RoleName, SchoolId);
-        return StatusCode(result.StatusCode, result);
+        var roleName = User.FindFirst("roleName")?.Value;
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = await _clubMemberService.GetByStudentIdForCurrentUserAsync(
+            studentId,
+            roleName,
+            schoolId
+        );
+
+        if (!result.IsSuccess)
+            return StatusCode(result.StatusCode, result);
+
+        return Ok(result);
     }
 
     [HttpPost]
-    [Authorize(Roles = "schooladmin")]
-    public async Task<IActionResult> AddMember(AddClubMemberDto dto)
+    public async Task<IActionResult> Create(CreateClubMemberDto dto)
     {
-        var result = await _clubService.AddMemberAsync(dto, RoleName, SchoolId);
-        return StatusCode(result.StatusCode, result);
+        var roleName = User.FindFirst("roleName")?.Value;
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = await _clubMemberService.CreateAsync(dto, roleName, schoolId);
+
+        if (!result.IsSuccess)
+            return StatusCode(result.StatusCode, result);
+
+        return Ok(result);
     }
 
-    [HttpDelete("club/{clubId}/student/{studentId}")]
-    [Authorize(Roles = "schooladmin")]
-    public async Task<IActionResult> RemoveMember(string clubId, string studentId)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
     {
-        var result = await _clubService.RemoveMemberAsync(clubId, studentId, RoleName, SchoolId);
-        return StatusCode(result.StatusCode, result);
+        var roleName = User.FindFirst("roleName")?.Value;
+        var schoolId = User.FindFirst("schoolId")?.Value;
+
+        var result = await _clubMemberService.DeleteAsync(id, roleName, schoolId);
+
+        if (!result.IsSuccess)
+            return StatusCode(result.StatusCode, result);
+
+        return Ok(result);
     }
 }

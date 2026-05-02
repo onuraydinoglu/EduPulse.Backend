@@ -18,7 +18,6 @@ public class ClubService : IClubService
     private readonly ITeacherRepository _teacherRepository;
     private readonly IValidator<CreateClubDto> _createClubValidator;
     private readonly IValidator<UpdateClubDto> _updateClubValidator;
-    private readonly IValidator<AddClubMemberDto> _addClubMemberValidator;
 
     public ClubService(
         IClubRepository clubRepository,
@@ -27,8 +26,7 @@ public class ClubService : IClubService
         IStudentRepository studentRepository,
         ITeacherRepository teacherRepository,
         IValidator<CreateClubDto> createClubValidator,
-        IValidator<UpdateClubDto> updateClubValidator,
-        IValidator<AddClubMemberDto> addClubMemberValidator)
+        IValidator<UpdateClubDto> updateClubValidator)
     {
         _clubRepository = clubRepository;
         _clubMemberRepository = clubMemberRepository;
@@ -37,7 +35,6 @@ public class ClubService : IClubService
         _teacherRepository = teacherRepository;
         _createClubValidator = createClubValidator;
         _updateClubValidator = updateClubValidator;
-        _addClubMemberValidator = addClubMemberValidator;
     }
 
     public async Task<Result<List<ClubListDto>>> GetAllForCurrentUserAsync(string? roleName, string? schoolId)
@@ -199,168 +196,6 @@ public class ClubService : IClubService
         await _clubRepository.DeleteAsync(id);
 
         return Result.Success("Kulüp başarıyla silindi.", 200);
-    }
-
-    public async Task<Result> AddMemberAsync(AddClubMemberDto dto, string? roleName, string? schoolId)
-    {
-        var validationResult = await _addClubMemberValidator.ValidateAsync(dto);
-
-        if (!validationResult.IsValid)
-            return Result.Failure(validationResult.Errors.First().ErrorMessage, 400);
-
-        if (roleName != "schooladmin")
-            return Result.Failure("Kulübe üye ekleme yetkiniz yok.", 403);
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Result.Failure("Okul bilgisi bulunamadı.", 400);
-
-        var club = await _clubRepository.GetByIdAsync(dto.ClubId);
-
-        if (club is null)
-            return Result.Failure("Kulüp bulunamadı.", 404);
-
-        if (club.SchoolId != schoolId)
-            return Result.Failure("Bu kulübe üye ekleme yetkiniz yok.", 403);
-
-        if (!club.IsActive)
-            return Result.Failure("Pasif kulübe üye eklenemez.", 400);
-
-        var student = await _studentRepository.GetByIdAsync(dto.StudentId);
-
-        if (student is null)
-            return Result.Failure("Öğrenci bulunamadı.", 404);
-
-        if (student.SchoolId != schoolId)
-            return Result.Failure("Seçilen öğrenci bu okula ait değil.", 400);
-
-        if (!student.IsActive)
-            return Result.Failure("Pasif öğrenci kulübe eklenemez.", 400);
-
-        var activeMembership = await _clubMemberRepository
-            .GetActiveByClubIdAndStudentIdAsync(dto.ClubId, dto.StudentId);
-
-        if (activeMembership is not null)
-            return Result.Failure("Bu öğrenci zaten bu kulübe kayıtlı.", 400);
-
-        var oldMembership = await _clubMemberRepository
-            .GetAnyByClubIdAndStudentIdAsync(dto.ClubId, dto.StudentId);
-
-        if (oldMembership is not null)
-        {
-            await _clubMemberRepository.ReactivateAsync(dto.ClubId, dto.StudentId);
-            return Result.Success("Öğrenci kulübe tekrar aktif olarak eklendi.", 200);
-        }
-
-        var clubMember = new ClubMember
-        {
-            SchoolId = schoolId,
-            ClubId = dto.ClubId,
-            StudentId = dto.StudentId,
-            IsActive = true
-        };
-
-        await _clubMemberRepository.CreateAsync(clubMember);
-
-        return Result.Success("Öğrenci kulübe başarıyla eklendi.", 201);
-    }
-
-    public async Task<Result> RemoveMemberAsync(string clubId, string studentId, string? roleName, string? schoolId)
-    {
-        if (roleName != "schooladmin")
-            return Result.Failure("Kulüpten üye çıkarma yetkiniz yok.", 403);
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Result.Failure("Okul bilgisi bulunamadı.", 400);
-
-        var club = await _clubRepository.GetByIdAsync(clubId);
-
-        if (club is null)
-            return Result.Failure("Kulüp bulunamadı.", 404);
-
-        if (club.SchoolId != schoolId)
-            return Result.Failure("Bu işlem için yetkiniz yok.", 403);
-
-        var membership = await _clubMemberRepository
-            .GetActiveByClubIdAndStudentIdAsync(clubId, studentId);
-
-        if (membership is null)
-            return Result.Failure("Öğrenci bu kulüpte kayıtlı değil.", 404);
-
-        await _clubMemberRepository.DeleteAsync(clubId, studentId);
-
-        return Result.Success("Öğrenci kulüpten başarıyla çıkarıldı.", 200);
-    }
-
-    public async Task<Result<List<ClubMemberListDto>>> GetMembersByClubIdAsync(string clubId, string? roleName, string? schoolId)
-    {
-        if (roleName != "schooladmin" && roleName != "teacher")
-            return Result<List<ClubMemberListDto>>.Failure("Kulüp üyelerini görüntüleme yetkiniz yok.", 403);
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Result<List<ClubMemberListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
-
-        var club = await _clubRepository.GetByIdAsync(clubId);
-
-        if (club is null)
-            return Result<List<ClubMemberListDto>>.Failure("Kulüp bulunamadı.", 404);
-
-        if (club.SchoolId != schoolId)
-            return Result<List<ClubMemberListDto>>.Failure("Bu kulübün üyelerini görüntüleme yetkiniz yok.", 403);
-
-        var memberships = await _clubMemberRepository.GetByClubIdAsync(clubId);
-        var dtoList = new List<ClubMemberListDto>();
-
-        foreach (var membership in memberships)
-        {
-            var student = await _studentRepository.GetByIdAsync(membership.StudentId);
-            var studentUser = student is not null
-                ? await _userRepository.GetByIdAsync(student.UserId)
-                : null;
-
-            dtoList.Add(new ClubMemberListDto
-            {
-                Id = membership.Id,
-                ClubId = membership.ClubId,
-                StudentId = membership.StudentId,
-                StudentFullName = studentUser is not null
-                    ? $"{studentUser.FirstName} {studentUser.LastName}"
-                    : null,
-                StudentNumber = student?.StudentNumber,
-                IsActive = membership.IsActive
-            });
-        }
-
-        return Result<List<ClubMemberListDto>>.Success(dtoList, "Kulüp üyeleri başarıyla listelendi.", 200);
-    }
-
-    public async Task<Result<List<ClubListDto>>> GetClubsByStudentIdAsync(string studentId, string? roleName, string? schoolId)
-    {
-        if (roleName != "schooladmin" && roleName != "teacher")
-            return Result<List<ClubListDto>>.Failure("Öğrencinin kulüplerini görüntüleme yetkiniz yok.", 403);
-
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Result<List<ClubListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
-
-        var student = await _studentRepository.GetByIdAsync(studentId);
-
-        if (student is null)
-            return Result<List<ClubListDto>>.Failure("Öğrenci bulunamadı.", 404);
-
-        if (student.SchoolId != schoolId)
-            return Result<List<ClubListDto>>.Failure("Bu öğrencinin kulüplerini görüntüleme yetkiniz yok.", 403);
-
-        var memberships = await _clubMemberRepository.GetByStudentIdAsync(studentId);
-        var dtoList = new List<ClubListDto>();
-
-        foreach (var membership in memberships)
-        {
-            var club = await _clubRepository.GetByIdAsync(membership.ClubId);
-
-            if (club is not null)
-                dtoList.Add(await MapToListDtoAsync(club));
-        }
-
-        return Result<List<ClubListDto>>.Success(dtoList, "Öğrencinin kulüpleri başarıyla listelendi.", 200);
     }
 
     private async Task<ClubListDto> MapToListDtoAsync(Club club)

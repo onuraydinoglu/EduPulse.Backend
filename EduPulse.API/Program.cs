@@ -63,6 +63,9 @@ builder.Services.AddScoped<IClubService, ClubService>();
 builder.Services.AddScoped<IClubMemberRepository, ClubMemberRepository>();
 builder.Services.AddScoped<IClubMemberService, ClubMemberService>();
 
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IEventService, EventService>();
+
 builder.Services.AddValidatorsFromAssemblyContaining<CreateStudentDtoValidator>();
 
 builder.Services.AddControllers();

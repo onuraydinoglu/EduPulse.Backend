@@ -1,6 +1,7 @@
 ﻿using EduPulse.Entities.Classrooms;
 using EduPulse.Entities.ClubMembers;
 using EduPulse.Entities.Clubs;
+using EduPulse.Entities.Events;
 using EduPulse.Entities.Lessons;
 using EduPulse.Entities.Parents;
 using EduPulse.Entities.Roles;
@@ -64,6 +65,9 @@ public class MongoDbContext
     public IMongoCollection<ClubMember> ClubMembers =>
         _database.GetCollection<ClubMember>("ClubMembers");
 
+    public IMongoCollection<Event> Events => 
+        _database.GetCollection<Event>("Events");
+
     private void CreateIndexes()
     {
         CreateUserIndexes();
@@ -77,6 +81,7 @@ public class MongoDbContext
         CreateStudentGradeIndexes();
         CreateClubIndexes();
         CreateClubMemberIndexes();
+        CreateEventIndexes();
     }
 
     private void CreateUserIndexes()
@@ -376,6 +381,37 @@ public class MongoDbContext
             new CreateIndexOptions
             {
                 Name = "IX_ClubMembers_StudentId_IsActive"
+            }));
+    }
+
+    private void CreateEventIndexes()
+    {
+        Events.Indexes.CreateOne(new CreateIndexModel<Event>(
+            Builders<Event>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.NormalizedName)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Unique = true,
+                Name = "UX_Events_SchoolId_NormalizedName_IsActive"
+            }));
+
+        Events.Indexes.CreateOne(new CreateIndexModel<Event>(
+            Builders<Event>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_Events_SchoolId_IsActive"
+            }));
+
+        Events.Indexes.CreateOne(new CreateIndexModel<Event>(
+            Builders<Event>.IndexKeys
+                .Ascending(x => x.EventDate),
+            new CreateIndexOptions
+            {
+                Name = "IX_Events_EventDate"
             }));
     }
 }

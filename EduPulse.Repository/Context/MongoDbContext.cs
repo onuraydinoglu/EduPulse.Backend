@@ -1,6 +1,7 @@
 ﻿using EduPulse.Entities.Classrooms;
 using EduPulse.Entities.ClubMembers;
 using EduPulse.Entities.Clubs;
+using EduPulse.Entities.EventMembers;
 using EduPulse.Entities.Events;
 using EduPulse.Entities.Lessons;
 using EduPulse.Entities.Parents;
@@ -68,6 +69,9 @@ public class MongoDbContext
     public IMongoCollection<Event> Events => 
         _database.GetCollection<Event>("Events");
 
+    public IMongoCollection<EventMember> EventMembers =>
+    _database.GetCollection<EventMember>("EventMembers");
+
     private void CreateIndexes()
     {
         CreateUserIndexes();
@@ -82,6 +86,7 @@ public class MongoDbContext
         CreateClubIndexes();
         CreateClubMemberIndexes();
         CreateEventIndexes();
+        CreateEventMemberIndexes();
     }
 
     private void CreateUserIndexes()
@@ -412,6 +417,48 @@ public class MongoDbContext
             new CreateIndexOptions
             {
                 Name = "IX_Events_EventDate"
+            }));
+    }
+
+    private void CreateEventMemberIndexes()
+    {
+        EventMembers.Indexes.CreateOne(new CreateIndexModel<EventMember>(
+            Builders<EventMember>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.EventId)
+                .Ascending(x => x.StudentId),
+            new CreateIndexOptions<EventMember>
+            {
+                Unique = true,
+                Name = "UX_EventMembers_SchoolId_EventId_StudentId_Active",
+                PartialFilterExpression = Builders<EventMember>.Filter.Eq(x => x.IsActive, true)
+            }));
+
+        EventMembers.Indexes.CreateOne(new CreateIndexModel<EventMember>(
+            Builders<EventMember>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_EventMembers_SchoolId_IsActive"
+            }));
+
+        EventMembers.Indexes.CreateOne(new CreateIndexModel<EventMember>(
+            Builders<EventMember>.IndexKeys
+                .Ascending(x => x.EventId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_EventMembers_EventId_IsActive"
+            }));
+
+        EventMembers.Indexes.CreateOne(new CreateIndexModel<EventMember>(
+            Builders<EventMember>.IndexKeys
+                .Ascending(x => x.StudentId)
+                .Ascending(x => x.IsActive),
+            new CreateIndexOptions
+            {
+                Name = "IX_EventMembers_StudentId_IsActive"
             }));
     }
 }

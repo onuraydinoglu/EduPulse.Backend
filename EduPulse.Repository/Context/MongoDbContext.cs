@@ -5,6 +5,7 @@ using EduPulse.Entities.EventMembers;
 using EduPulse.Entities.Events;
 using EduPulse.Entities.Lessons;
 using EduPulse.Entities.Parents;
+using EduPulse.Entities.PersonalNotes;
 using EduPulse.Entities.Roles;
 using EduPulse.Entities.Schools;
 using EduPulse.Entities.StudentGrades;
@@ -72,6 +73,9 @@ public class MongoDbContext
     public IMongoCollection<EventMember> EventMembers =>
     _database.GetCollection<EventMember>("EventMembers");
 
+    public IMongoCollection<PersonalNote> PersonalNotes =>
+    _database.GetCollection<PersonalNote>("PersonalNotes");
+
     private void CreateIndexes()
     {
         CreateUserIndexes();
@@ -87,6 +91,7 @@ public class MongoDbContext
         CreateClubMemberIndexes();
         CreateEventIndexes();
         CreateEventMemberIndexes();
+        CreatePersonalNoteIndexes();
     }
 
     private void CreateUserIndexes()
@@ -459,6 +464,29 @@ public class MongoDbContext
             new CreateIndexOptions
             {
                 Name = "IX_EventMembers_StudentId_IsActive"
+            }));
+    }
+
+    private void CreatePersonalNoteIndexes()
+    {
+        PersonalNotes.Indexes.CreateOne(new CreateIndexModel<PersonalNote>(
+            Builders<PersonalNote>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.UserId)
+                .Descending(x => x.CreatedDate),
+            new CreateIndexOptions
+            {
+                Name = "IX_PersonalNotes_SchoolId_UserId_CreatedDate"
+            }));
+
+        PersonalNotes.Indexes.CreateOne(new CreateIndexModel<PersonalNote>(
+            Builders<PersonalNote>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.UserId)
+                .Ascending(x => x.IsPinned),
+            new CreateIndexOptions
+            {
+                Name = "IX_PersonalNotes_SchoolId_UserId_IsPinned"
             }));
     }
 }

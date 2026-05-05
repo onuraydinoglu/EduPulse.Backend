@@ -40,7 +40,6 @@ public class PersonalNoteService : IPersonalNoteService
             Id = x.Id,
             Title = x.Title,
             Content = x.Content,
-            IsPinned = x.IsPinned,
             IsActive = x.IsActive,
             CreatedDate = x.CreatedDate
         }).ToList();
@@ -72,7 +71,6 @@ public class PersonalNoteService : IPersonalNoteService
             Id = note.Id,
             Title = note.Title,
             Content = note.Content,
-            IsPinned = note.IsPinned,
             IsActive = note.IsActive,
             CreatedDate = note.CreatedDate
         };
@@ -105,7 +103,6 @@ public class PersonalNoteService : IPersonalNoteService
             UserId = userId,
             Title = dto.Title.Trim(),
             Content = dto.Content.Trim(),
-            IsPinned = dto.IsPinned,
             IsActive = true
         };
 
@@ -140,7 +137,6 @@ public class PersonalNoteService : IPersonalNoteService
 
         note.Title = dto.Title.Trim();
         note.Content = dto.Content.Trim();
-        note.IsPinned = dto.IsPinned;
         note.IsActive = dto.IsActive;
         note.UpdatedDate = DateTime.UtcNow;
 

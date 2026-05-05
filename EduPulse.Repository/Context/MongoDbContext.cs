@@ -478,15 +478,5 @@ public class MongoDbContext
             {
                 Name = "IX_PersonalNotes_SchoolId_UserId_CreatedDate"
             }));
-
-        PersonalNotes.Indexes.CreateOne(new CreateIndexModel<PersonalNote>(
-            Builders<PersonalNote>.IndexKeys
-                .Ascending(x => x.SchoolId)
-                .Ascending(x => x.UserId)
-                .Ascending(x => x.IsPinned),
-            new CreateIndexOptions
-            {
-                Name = "IX_PersonalNotes_SchoolId_UserId_IsPinned"
-            }));
     }
 }

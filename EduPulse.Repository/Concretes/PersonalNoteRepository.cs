@@ -20,8 +20,7 @@ public class PersonalNoteRepository : IPersonalNoteRepository
             .Find(x =>
                 x.SchoolId == schoolId &&
                 x.UserId == userId)
-            .SortByDescending(x => x.IsPinned)
-            .ThenByDescending(x => x.CreatedDate)
+            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 

@@ -5,8 +5,19 @@ namespace EduPulse.Business.Abstracts;
 
 public interface IClassroomService
 {
-    Task<Result<List<ClassroomListDto>>> GetAllForCurrentUserAsync(string? roleName, string? schoolId);
-    Task<Result<ClassroomListDto>> GetByIdForCurrentUserAsync(string id, string? roleName, string? schoolId);
+    Task<Result<List<ClassroomListDto>>> GetAllForCurrentUserAsync(
+        string? roleName,
+        string? schoolId,
+        string? currentUserId
+    );
+
+    Task<Result<ClassroomListDto>> GetByIdForCurrentUserAsync(
+        string id,
+        string? roleName,
+        string? schoolId,
+        string? currentUserId
+    );
+
     Task<Result> CreateAsync(CreateClassroomDto dto, string? roleName, string? schoolId);
     Task<Result> UpdateAsync(UpdateClassroomDto dto, string? roleName, string? schoolId);
     Task<Result> DeleteAsync(string id, string? roleName, string? schoolId);

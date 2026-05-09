@@ -5,8 +5,18 @@ namespace EduPulse.Business.Abstracts;
 
 public interface ITeacherLessonService
 {
-    Task<Result<List<TeacherLessonListDto>>> GetAllForCurrentUserAsync(string? roleName, string? schoolId);
-    Task<Result<TeacherLessonListDto>> GetByIdForCurrentUserAsync(string id, string? roleName, string? schoolId);
+    Task<Result<List<TeacherLessonListDto>>> GetAllForCurrentUserAsync(
+        string? roleName,
+        string? schoolId,
+        string? currentUserId
+    );
+
+    Task<Result<TeacherLessonListDto>> GetByIdForCurrentUserAsync(
+        string id,
+        string? roleName,
+        string? schoolId,
+        string? currentUserId
+    );
 
     Task<Result> CreateAsync(CreateTeacherLessonDto dto, string? schoolId);
     Task<Result> UpdateAsync(UpdateTeacherLessonDto dto, string? schoolId);

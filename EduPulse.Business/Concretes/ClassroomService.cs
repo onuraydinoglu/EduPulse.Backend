@@ -12,6 +12,8 @@ public class ClassroomService : IClassroomService
     private readonly IClassroomRepository _classroomRepository;
     private readonly ITeacherRepository _teacherRepository;
     private readonly IUserRepository _userRepository;
+    private readonly ITeacherLessonRepository _teacherLessonRepository;
+    private readonly IStudentRepository _studentRepository;
     private readonly IValidator<CreateClassroomDto> _createValidator;
     private readonly IValidator<UpdateClassroomDto> _updateValidator;
 
@@ -19,18 +21,24 @@ public class ClassroomService : IClassroomService
         IClassroomRepository classroomRepository,
         ITeacherRepository teacherRepository,
         IUserRepository userRepository,
+        ITeacherLessonRepository teacherLessonRepository,
+        IStudentRepository studentRepository,
         IValidator<CreateClassroomDto> createValidator,
         IValidator<UpdateClassroomDto> updateValidator)
     {
         _classroomRepository = classroomRepository;
         _teacherRepository = teacherRepository;
         _userRepository = userRepository;
+        _teacherLessonRepository = teacherLessonRepository;
+        _studentRepository = studentRepository;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
     }
+
     public async Task<Result<List<ClassroomListDto>>> GetAllForCurrentUserAsync(
         string? roleName,
-        string? schoolId)
+        string? schoolId,
+        string? currentUserId)
     {
         List<Classroom> classrooms;
 
@@ -43,62 +51,95 @@ public class ClassroomService : IClassroomService
             if (string.IsNullOrWhiteSpace(schoolId))
                 return Result<List<ClassroomListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
 
-            classrooms = await _classroomRepository.GetBySchoolIdAsync(schoolId);
+            if (roleName == "teacher")
+            {
+                if (string.IsNullOrWhiteSpace(currentUserId))
+                    return Result<List<ClassroomListDto>>.Failure("Kullanıcı bilgisi bulunamadı.", 400);
+
+                var currentTeacher = await _teacherRepository.GetByUserIdAsync(currentUserId);
+
+                if (currentTeacher is null)
+                    return Result<List<ClassroomListDto>>.Failure("Öğretmen kaydı bulunamadı.", 404);
+
+                if (currentTeacher.SchoolId != schoolId)
+                    return Result<List<ClassroomListDto>>.Failure("Bu okula erişim yetkiniz yok.", 403);
+
+                var allSchoolClassrooms = await _classroomRepository.GetBySchoolIdAsync(schoolId);
+                var teacherLessons = await _teacherLessonRepository.GetByTeacherIdAsync(currentTeacher.Id);
+
+                var allowedClassroomIds = teacherLessons
+                    .Where(x => x.IsActive)
+                    .Select(x => x.ClassroomId)
+                    .ToHashSet();
+
+                classrooms = allSchoolClassrooms
+                    .Where(x =>
+                        x.TeacherId == currentTeacher.Id ||
+                        allowedClassroomIds.Contains(x.Id))
+                    .OrderBy(x => x.Grade)
+                    .ThenBy(x => x.Section)
+                    .ToList();
+            }
+            else
+            {
+                classrooms = await _classroomRepository.GetBySchoolIdAsync(schoolId);
+            }
         }
 
         var dtoList = new List<ClassroomListDto>();
 
         foreach (var classroom in classrooms)
         {
-            string? teacherFullName = null;
-
-            if (!string.IsNullOrWhiteSpace(classroom.TeacherId))
-            {
-                var teacher = await _teacherRepository.GetByIdAsync(classroom.TeacherId);
-
-                if (teacher is not null)
-                {
-                    var user = await _userRepository.GetByIdAsync(teacher.UserId);
-
-                    if (user is not null)
-                        teacherFullName = $"{user.FirstName} {user.LastName}";
-                }
-            }
-
-            dtoList.Add(new ClassroomListDto
-            {
-                Id = classroom.Id,
-                SchoolId = classroom.SchoolId,
-                Grade = classroom.Grade,
-                Section = classroom.Section,
-                TeacherId = classroom.TeacherId,
-                TeacherFullName = teacherFullName,
-                IsActive = classroom.IsActive
-            });
+            dtoList.Add(await MapToListDtoAsync(classroom));
         }
 
         return Result<List<ClassroomListDto>>.Success(
             dtoList,
             "Sınıflar başarıyla listelendi.",
-            200);
+            200
+        );
     }
 
     public async Task<Result<ClassroomListDto>> GetByIdForCurrentUserAsync(
         string id,
         string? roleName,
-        string? schoolId)
+        string? schoolId,
+        string? currentUserId)
     {
         var classroom = await _classroomRepository.GetByIdAsync(id);
 
         if (classroom is null)
             return Result<ClassroomListDto>.Failure("Sınıf bulunamadı.", 404);
 
-        if (roleName != "superadmin" && classroom.SchoolId != schoolId)
-            return Result<ClassroomListDto>.Failure("Bu sınıfa erişim yetkiniz yok.", 403);
+        if (roleName != "superadmin")
+        {
+            if (string.IsNullOrWhiteSpace(schoolId))
+                return Result<ClassroomListDto>.Failure("Okul bilgisi bulunamadı.", 400);
+
+            if (classroom.SchoolId != schoolId)
+                return Result<ClassroomListDto>.Failure("Bu sınıfa erişim yetkiniz yok.", 403);
+        }
+
+        if (roleName == "teacher")
+        {
+            var canAccess = await CanTeacherAccessClassroomAsync(
+                classroom.Id,
+                classroom.TeacherId,
+                currentUserId,
+                schoolId
+            );
+
+            if (!canAccess)
+                return Result<ClassroomListDto>.Failure("Bu sınıfa erişim yetkiniz yok.", 403);
+        }
 
         var dto = await MapToListDtoAsync(classroom);
 
-        return Result<ClassroomListDto>.Success(dto, "Sınıf başarıyla getirildi.", 200);
+        return Result<ClassroomListDto>.Success(
+            dto,
+            "Sınıf başarıyla getirildi.",
+            200
+        );
     }
 
     public async Task<Result> CreateAsync(
@@ -123,7 +164,8 @@ public class ClassroomService : IClassroomService
         var existingClassroom = await _classroomRepository.GetBySchoolGradeSectionAsync(
             selectedSchoolId,
             dto.Grade,
-            normalizedSection);
+            normalizedSection
+        );
 
         if (existingClassroom is not null)
             return Result.Failure("Bu okulda aynı sınıf zaten mevcut.", 400);
@@ -186,7 +228,8 @@ public class ClassroomService : IClassroomService
         var existingClassroom = await _classroomRepository.GetBySchoolGradeSectionAsync(
             classroom.SchoolId,
             dto.Grade,
-            normalizedSection);
+            normalizedSection
+        );
 
         if (existingClassroom is not null && existingClassroom.Id != dto.Id)
             return Result.Failure("Bu okulda aynı sınıf zaten mevcut.", 400);
@@ -209,7 +252,8 @@ public class ClassroomService : IClassroomService
                 .GetBySchoolIdAndTeacherIdExceptClassroomIdAsync(
                     classroom.SchoolId,
                     normalizedTeacherId,
-                    dto.Id);
+                    dto.Id
+                );
 
             if (teacherClassroom is not null)
                 return Result.Failure("Bu öğretmen bu okulda zaten başka bir sınıfa atanmış.", 400);
@@ -243,6 +287,36 @@ public class ClassroomService : IClassroomService
         return Result.Success("Sınıf başarıyla silindi.", 200);
     }
 
+    private async Task<bool> CanTeacherAccessClassroomAsync(
+        string classroomId,
+        string? classroomAdvisorTeacherId,
+        string? currentUserId,
+        string? schoolId)
+    {
+        if (string.IsNullOrWhiteSpace(currentUserId) || string.IsNullOrWhiteSpace(schoolId))
+            return false;
+
+        var teacher = await _teacherRepository.GetByUserIdAsync(currentUserId);
+
+        if (teacher is null)
+            return false;
+
+        if (teacher.SchoolId != schoolId)
+            return false;
+
+        if (!string.IsNullOrWhiteSpace(classroomAdvisorTeacherId) &&
+            classroomAdvisorTeacherId == teacher.Id)
+            return true;
+
+        var teacherLessons = await _teacherLessonRepository.GetByTeacherIdAsync(teacher.Id);
+
+        return teacherLessons.Any(x =>
+            x.IsActive &&
+            x.ClassroomId == classroomId &&
+            x.SchoolId == schoolId
+        );
+    }
+
     private async Task<ClassroomListDto> MapToListDtoAsync(Classroom classroom)
     {
         string? teacherFullName = null;
@@ -260,6 +334,8 @@ public class ClassroomService : IClassroomService
             }
         }
 
+        var students = await _studentRepository.GetByClassroomIdAsync(classroom.Id);
+
         return new ClassroomListDto
         {
             Id = classroom.Id,
@@ -268,6 +344,7 @@ public class ClassroomService : IClassroomService
             Section = classroom.Section,
             TeacherId = classroom.TeacherId,
             TeacherFullName = teacherFullName,
+            StudentCount = students.Count,
             IsActive = classroom.IsActive
         };
     }

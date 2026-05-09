@@ -22,7 +22,7 @@ public class TeachersController : ControllerBase
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
 
     [HttpGet]
-    [Authorize(Roles = "schooladmin")]
+    [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _teacherService.GetAllForCurrentUserAsync(RoleName, SchoolId);
@@ -30,18 +30,20 @@ public class TeachersController : ControllerBase
     }
 
     [HttpGet("active")]
-    [Authorize(Roles = "schooladmin")]
+    [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> GetActive()
     {
         if (string.IsNullOrWhiteSpace(SchoolId))
+        {
             return BadRequest("Okul bilgisi bulunamadı.");
+        }
 
         var result = await _teacherService.GetActiveBySchoolIdAsync(SchoolId);
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "schooladmin")]
+    [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> GetById(string id)
     {
         var result = await _teacherService.GetByIdForCurrentUserAsync(id, RoleName, SchoolId);

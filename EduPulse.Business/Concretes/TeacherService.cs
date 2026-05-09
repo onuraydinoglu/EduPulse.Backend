@@ -33,39 +33,36 @@ public class TeacherService : ITeacherService
         _updateValidator = updateValidator;
     }
 
-    public async Task<Result<List<TeacherListDto>>> GetAllForCurrentUserAsync(string? currentRoleName, string? currentSchoolId)
+    public async Task<Result<List<TeacherListDto>>> GetAllForCurrentUserAsync(
+     string? currentRoleName,
+     string? currentSchoolId
+ )
     {
         if (currentRoleName == "superadmin")
-            return Result<List<TeacherListDto>>.Failure("Superadmin öğretmen işlemi yapamaz.", 403);
-
-        if (string.IsNullOrWhiteSpace(currentSchoolId))
-            return Result<List<TeacherListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
-
-        var teachers = (await _teacherRepository.GetBySchoolIdAsync(currentSchoolId))
-            .OrderByDescending(x => x.CreatedDate)
-            .ToList();
-
-        var result = new List<TeacherListDto>();
-
-        foreach (var teacher in teachers)
         {
-            var user = await _userRepository.GetByIdAsync(teacher.UserId);
-            if (user is null) continue;
-
-            var dto = await MapToListDtoAsync(teacher, user);
-            result.Add(dto);
+            return Result<List<TeacherListDto>>.Failure(
+                "Superadmin öğretmen işlemi yapamaz.",
+                403
+            );
         }
 
-        return Result<List<TeacherListDto>>.Success(result, "Öğretmenler başarıyla listelendi.");
-    }
+        if (currentRoleName != "schooladmin" && currentRoleName != "teacher")
+        {
+            return Result<List<TeacherListDto>>.Failure(
+                "Öğretmenleri listeleme yetkiniz yok.",
+                403
+            );
+        }
 
-    public async Task<Result<List<TeacherListDto>>> GetActiveBySchoolIdAsync(string schoolId)
-    {
-        if (string.IsNullOrWhiteSpace(schoolId))
-            return Result<List<TeacherListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
+        if (string.IsNullOrWhiteSpace(currentSchoolId))
+        {
+            return Result<List<TeacherListDto>>.Failure(
+                "Okul bilgisi bulunamadı.",
+                400
+            );
+        }
 
-        var teachers = await _teacherRepository.GetActiveBySchoolIdAsync(schoolId);
-
+        var teachers = await _teacherRepository.GetBySchoolIdAsync(currentSchoolId);
         var result = new List<TeacherListDto>();
 
         foreach (var teacher in teachers)
@@ -73,18 +70,58 @@ public class TeacherService : ITeacherService
             var user = await _userRepository.GetByIdAsync(teacher.UserId);
 
             if (user is null)
+            {
                 continue;
-
-            if (!user.IsActive)
-                continue;
+            }
 
             var dto = await MapToListDtoAsync(teacher, user);
             result.Add(dto);
         }
 
-        return Result<List<TeacherListDto>>.Success(result, "Aktif öğretmenler başarıyla listelendi.");
+        return Result<List<TeacherListDto>>.Success(
+            result,
+            "Öğretmenler başarıyla listelendi.",
+            200
+        );
     }
 
+    public async Task<Result<List<TeacherListDto>>> GetActiveBySchoolIdAsync(string schoolId)
+    {
+        if (string.IsNullOrWhiteSpace(schoolId))
+        {
+            return Result<List<TeacherListDto>>.Failure(
+                "Okul bilgisi bulunamadı.",
+                400
+            );
+        }
+
+        var teachers = await _teacherRepository.GetBySchoolIdAsync(schoolId);
+        var result = new List<TeacherListDto>();
+
+        foreach (var teacher in teachers)
+        {
+            var user = await _userRepository.GetByIdAsync(teacher.UserId);
+
+            if (user is null)
+            {
+                continue;
+            }
+
+            if (!teacher.IsActive || !user.IsActive)
+            {
+                continue;
+            }
+
+            var dto = await MapToListDtoAsync(teacher, user);
+            result.Add(dto);
+        }
+
+        return Result<List<TeacherListDto>>.Success(
+            result,
+            "Aktif öğretmenler başarıyla listelendi.",
+            200
+        );
+    }
     public async Task<Result<TeacherListDto>> GetByIdForCurrentUserAsync(string id, string? currentRoleName, string? currentSchoolId)
     {
         var teacher = await _teacherRepository.GetByIdAsync(id);
@@ -304,13 +341,20 @@ public class TeacherService : ITeacherService
         };
     }
 
-    private static bool CanAccessTeacher(Teacher teacher, string? currentRoleName, string? currentSchoolId)
-    {
+    private static bool CanAccessTeacher(
+        Teacher teacher,
+        string? currentRoleName,
+        string? currentSchoolId
+    ) {
         if (currentRoleName == "superadmin")
+        {
             return false;
+        }
 
-        if (currentRoleName == "schooladmin")
+        if (currentRoleName == "schooladmin" || currentRoleName == "teacher")
+        {
             return teacher.SchoolId == currentSchoolId;
+        }
 
         return false;
     }

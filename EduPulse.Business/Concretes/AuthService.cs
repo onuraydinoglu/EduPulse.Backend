@@ -11,17 +11,20 @@ public class AuthService : IAuthService
     private readonly IUserRepository _userRepository;
     private readonly ISchoolRepository _schoolRepository;
     private readonly IRoleRepository _roleRepository;
+    private readonly ITeacherRepository _teacherRepository;
     private readonly IJwtService _jwtService;
 
     public AuthService(
         IUserRepository userRepository,
         ISchoolRepository schoolRepository,
         IRoleRepository roleRepository,
+        ITeacherRepository teacherRepository,
         IJwtService jwtService)
     {
         _userRepository = userRepository;
         _schoolRepository = schoolRepository;
         _roleRepository = roleRepository;
+        _teacherRepository = teacherRepository;
         _jwtService = jwtService;
     }
 
@@ -75,10 +78,8 @@ public class AuthService : IAuthService
             Email = dto.Email.Trim(),
             PhoneNumber = dto.PhoneNumber.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-
             RoleId = role.Id,
             RoleName = role.Name,
-
             SchoolId = school.Id,
             IsActive = true
         };
@@ -103,6 +104,21 @@ public class AuthService : IAuthService
         if (!user.IsActive)
             return Result<LoginResponseDto>.Failure("Kullanıcı pasif.", 403);
 
+        string? teacherId = null;
+
+        if (user.RoleName == "teacher")
+        {
+            var teacher = await _teacherRepository.GetByUserIdAsync(user.Id);
+
+            if (teacher is null)
+                return Result<LoginResponseDto>.Failure("Öğretmen profili bulunamadı.", 404);
+
+            if (!teacher.IsActive)
+                return Result<LoginResponseDto>.Failure("Öğretmen kaydı pasif.", 403);
+
+            teacherId = teacher.Id;
+        }
+
         var token = _jwtService.CreateToken(user);
 
         var response = new LoginResponseDto
@@ -115,6 +131,7 @@ public class AuthService : IAuthService
             RoleId = user.RoleId,
             RoleName = user.RoleName,
             SchoolId = user.SchoolId,
+            TeacherId = teacherId,
             Token = token
         };
 

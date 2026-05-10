@@ -19,11 +19,13 @@ public class ClassroomsController : ControllerBase
     }
 
     private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
+
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
+
     private string? CurrentUserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
     [HttpGet]
-    [Authorize(Roles = "superadmin,schooladmin,teacher")]
+    [Authorize(Roles = "schooladmin,teacher,officer")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _classroomService.GetAllForCurrentUserAsync(
@@ -36,7 +38,7 @@ public class ClassroomsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "superadmin,schooladmin,teacher")]
+    [Authorize(Roles = "schooladmin,teacher,officer")]
     public async Task<IActionResult> GetById(string id)
     {
         var result = await _classroomService.GetByIdForCurrentUserAsync(

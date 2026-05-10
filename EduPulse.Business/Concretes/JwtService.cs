@@ -17,7 +17,7 @@ public class JwtService : IJwtService
         _configuration = configuration;
     }
 
-    public string CreateToken(User user)
+    public string CreateToken(User user, string? teacherId = null)
     {
         var claims = new List<Claim>
         {
@@ -29,22 +29,32 @@ public class JwtService : IJwtService
             new Claim("schoolId", user.SchoolId ?? "")
         };
 
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]!)
-        );
+        if (!string.IsNullOrWhiteSpace(teacherId))
+        {
+            claims.Add(new Claim("teacherId", teacherId));
+        }
+
+        var secretKey = _configuration["JwtSettings:SecretKey"];
+
+        if (string.IsNullOrWhiteSpace(secretKey))
+        {
+            throw new InvalidOperationException("JwtSettings:SecretKey appsettings içinde tanımlı değil.");
+        }
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
 
         var credentials = new SigningCredentials(
             key,
             SecurityAlgorithms.HmacSha256
         );
 
+        var expireMinutes = Convert.ToDouble(_configuration["JwtSettings:ExpireMinutes"]);
+
         var token = new JwtSecurityToken(
             issuer: _configuration["JwtSettings:Issuer"],
             audience: _configuration["JwtSettings:Audience"],
             claims: claims,
-            expires: DateTime.Now.AddMinutes(
-                Convert.ToDouble(_configuration["JwtSettings:ExpireMinutes"])
-            ),
+            expires: DateTime.Now.AddMinutes(expireMinutes),
             signingCredentials: credentials
         );
 

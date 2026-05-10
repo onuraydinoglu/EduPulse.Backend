@@ -106,7 +106,7 @@ public class AuthService : IAuthService
 
         string? teacherId = null;
 
-        if (user.RoleName == "teacher")
+        if (user.RoleName.Equals("teacher", StringComparison.OrdinalIgnoreCase))
         {
             var teacher = await _teacherRepository.GetByUserIdAsync(user.Id);
 
@@ -119,7 +119,7 @@ public class AuthService : IAuthService
             teacherId = teacher.Id;
         }
 
-        var token = _jwtService.CreateToken(user);
+        var token = _jwtService.CreateToken(user, teacherId);
 
         var response = new LoginResponseDto
         {

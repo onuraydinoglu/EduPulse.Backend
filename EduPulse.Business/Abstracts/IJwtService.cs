@@ -4,5 +4,5 @@ namespace EduPulse.Business.Abstracts;
 
 public interface IJwtService
 {
-    string CreateToken(User user);
+    string CreateToken(User user, string? teacherId = null);
 }

@@ -125,43 +125,77 @@ public class TeacherLessonService : ITeacherLessonService
         if (string.IsNullOrWhiteSpace(schoolId))
             return Result.Failure("Okul bilgisi bulunamadı.", 400);
 
-        var classroom = await _classroomRepository.GetByIdAsync(dto.ClassroomId);
+        if (string.IsNullOrWhiteSpace(dto.TeacherId))
+            return Result.Failure("Öğretmen seçimi zorunludur.", 400);
 
-        if (classroom is null || classroom.SchoolId != schoolId)
-            return Result.Failure("Sınıf bulunamadı.", 404);
+        if (string.IsNullOrWhiteSpace(dto.LessonId))
+            return Result.Failure("Ders seçimi zorunludur.", 400);
+
+        var selectedClassroomIds = dto.ClassroomIds?
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList() ?? new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(dto.ClassroomId) &&
+            !selectedClassroomIds.Contains(dto.ClassroomId))
+        {
+            selectedClassroomIds.Add(dto.ClassroomId);
+        }
+
+        if (!selectedClassroomIds.Any())
+            return Result.Failure("En az bir sınıf seçilmelidir.", 400);
 
         var lesson = await _lessonRepository.GetByIdAsync(dto.LessonId);
-
         if (lesson is null || lesson.SchoolId != schoolId)
             return Result.Failure("Ders bulunamadı.", 404);
 
         var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
-
         if (teacher is null || teacher.SchoolId != schoolId)
             return Result.Failure("Öğretmen bulunamadı.", 404);
 
-        var duplicate = await _teacherLessonRepository.GetDuplicateAsync(
-            schoolId,
-            dto.TeacherId,
-            dto.LessonId,
-            dto.ClassroomId
-        );
+        var createdCount = 0;
+        var skippedCount = 0;
 
-        if (duplicate is not null)
-            return Result.Failure("Bu öğretmen bu sınıfa bu ders için zaten atanmış.", 400);
-
-        var teacherLesson = new TeacherLesson
+        foreach (var classroomId in selectedClassroomIds)
         {
-            SchoolId = schoolId,
-            TeacherId = dto.TeacherId,
-            LessonId = dto.LessonId,
-            ClassroomId = dto.ClassroomId,
-            IsActive = true
-        };
+            var classroom = await _classroomRepository.GetByIdAsync(classroomId);
+            if (classroom is null || classroom.SchoolId != schoolId)
+                return Result.Failure("Seçilen sınıflardan biri bulunamadı.", 404);
 
-        await _teacherLessonRepository.AddAsync(teacherLesson);
+            var duplicate = await _teacherLessonRepository.GetDuplicateAsync(
+                schoolId,
+                dto.TeacherId,
+                dto.LessonId,
+                classroomId
+            );
 
-        return Result.Success("Ders öğretmene ve sınıfa başarıyla bağlandı.", 201);
+            if (duplicate is not null)
+            {
+                skippedCount++;
+                continue;
+            }
+
+            var teacherLesson = new TeacherLesson
+            {
+                SchoolId = schoolId,
+                TeacherId = dto.TeacherId,
+                LessonId = dto.LessonId,
+                ClassroomId = classroomId,
+                IsActive = true
+            };
+
+            await _teacherLessonRepository.AddAsync(teacherLesson);
+            createdCount++;
+        }
+
+        if (createdCount == 0)
+            return Result.Failure("Seçilen sınıfların tamamı için bu atama zaten mevcut.", 400);
+
+        var message = skippedCount > 0
+            ? $"{createdCount} sınıf için atama oluşturuldu. {skippedCount} mevcut atama tekrar eklenmedi."
+            : $"{createdCount} sınıf için atama başarıyla oluşturuldu.";
+
+        return Result.Success(message, 201);
     }
 
     public async Task<Result> UpdateAsync(UpdateTeacherLessonDto dto, string? schoolId)

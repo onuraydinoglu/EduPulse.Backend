@@ -97,10 +97,6 @@ public class TeacherLessonRepository : ITeacherLessonRepository
 
     public async Task DeleteAsync(string id)
     {
-        var update = Builders<TeacherLesson>.Update
-            .Set(x => x.IsActive, false)
-            .Set(x => x.UpdatedDate, DateTime.UtcNow);
-
-        await _teacherLessons.UpdateOneAsync(x => x.Id == id, update);
+        await _teacherLessons.DeleteOneAsync(x => x.Id == id);
     }
 }

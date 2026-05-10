@@ -4,6 +4,7 @@ using EduPulse.Entities.Clubs;
 using EduPulse.Entities.EventMembers;
 using EduPulse.Entities.Events;
 using EduPulse.Entities.Lessons;
+using EduPulse.Entities.Messages;
 using EduPulse.Entities.Parents;
 using EduPulse.Entities.PersonalNotes;
 using EduPulse.Entities.Roles;
@@ -71,10 +72,13 @@ public class MongoDbContext
         _database.GetCollection<Event>("Events");
 
     public IMongoCollection<EventMember> EventMembers =>
-    _database.GetCollection<EventMember>("EventMembers");
+        _database.GetCollection<EventMember>("EventMembers");
 
     public IMongoCollection<PersonalNote> PersonalNotes =>
-    _database.GetCollection<PersonalNote>("PersonalNotes");
+        _database.GetCollection<PersonalNote>("PersonalNotes");
+
+    public IMongoCollection<Message> Messages => 
+        _database.GetCollection<Message>("Messages");
 
     private void CreateIndexes()
     {
@@ -92,6 +96,7 @@ public class MongoDbContext
         CreateEventIndexes();
         CreateEventMemberIndexes();
         CreatePersonalNoteIndexes();
+        CreateMessageIndexes();
     }
 
     private void CreateUserIndexes()
@@ -478,5 +483,44 @@ public class MongoDbContext
             {
                 Name = "IX_PersonalNotes_SchoolId_UserId_CreatedDate"
             }));
+    }
+
+    private void CreateMessageIndexes()
+    {
+        Messages.Indexes.CreateOne(new CreateIndexModel<Message>(
+            Builders<Message>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.ReceiverUserId)
+                .Ascending(x => x.IsDeletedByReceiver)
+                .Descending(x => x.CreatedDate),
+            new CreateIndexOptions
+            {
+                Name = "IX_Messages_SchoolId_ReceiverUserId_IsDeletedByReceiver_CreatedDate"
+            }
+        ));
+
+        Messages.Indexes.CreateOne(new CreateIndexModel<Message>(
+            Builders<Message>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.SenderUserId)
+                .Ascending(x => x.IsDeletedBySender)
+                .Descending(x => x.CreatedDate),
+            new CreateIndexOptions
+            {
+                Name = "IX_Messages_SchoolId_SenderUserId_IsDeletedBySender_CreatedDate"
+            }
+        ));
+
+        Messages.Indexes.CreateOne(new CreateIndexModel<Message>(
+            Builders<Message>.IndexKeys
+                .Ascending(x => x.SchoolId)
+                .Ascending(x => x.SenderUserId)
+                .Ascending(x => x.ReceiverUserId)
+                .Ascending(x => x.CreatedDate),
+            new CreateIndexOptions
+            {
+                Name = "IX_Messages_Conversation"
+            }
+        ));
     }
 }

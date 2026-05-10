@@ -197,7 +197,7 @@ public class TeacherLessonService : ITeacherLessonService
 
         return Result.Success(message, 201);
     }
-
+        
     public async Task<Result> UpdateAsync(UpdateTeacherLessonDto dto, string? schoolId)
     {
         if (string.IsNullOrWhiteSpace(schoolId))
@@ -255,7 +255,7 @@ public class TeacherLessonService : ITeacherLessonService
 
         await _teacherLessonRepository.DeleteAsync(id);
 
-        return Result.Success("Bağlantı silindi.", 200);
+        return Result.Success("Ders ataması kalıcı olarak silindi.", 200);
     }
 
     private async Task<TeacherLessonListDto> MapToDtoAsync(TeacherLesson teacherLesson)

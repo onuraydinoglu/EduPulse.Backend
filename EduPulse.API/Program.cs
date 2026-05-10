@@ -72,6 +72,9 @@ builder.Services.AddScoped<IEventMemberService, EventMemberService>();
 builder.Services.AddScoped<IPersonalNoteRepository, PersonalNoteRepository>();
 builder.Services.AddScoped<IPersonalNoteService, PersonalNoteService>();
 
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+
 builder.Services.AddValidatorsFromAssemblyContaining<CreateStudentDtoValidator>();
 
 builder.Services.AddControllers();

@@ -17,14 +17,14 @@ public class TeacherLessonRepository : ITeacherLessonRepository
     public async Task<List<TeacherLesson>> GetAllAsync()
     {
         return await _teacherLessons
-            .Find(x => true)
+            .Find(x => x.IsActive)
             .ToListAsync();
     }
 
     public async Task<List<TeacherLesson>> GetBySchoolIdAsync(string schoolId)
     {
         return await _teacherLessons
-            .Find(x => x.SchoolId == schoolId)
+            .Find(x => x.SchoolId == schoolId && x.IsActive)
             .ToListAsync();
     }
 
@@ -38,7 +38,7 @@ public class TeacherLessonRepository : ITeacherLessonRepository
     public async Task<TeacherLesson?> GetByIdAsync(string id)
     {
         return await _teacherLessons
-            .Find(x => x.Id == id)
+            .Find(x => x.Id == id && x.IsActive)
             .FirstOrDefaultAsync();
     }
 
@@ -74,21 +74,16 @@ public class TeacherLessonRepository : ITeacherLessonRepository
 
     public async Task AddAsync(TeacherLesson teacherLesson)
     {
-        teacherLesson.CreatedDate = DateTime.UtcNow;
-        teacherLesson.UpdatedDate = null;
-
         await _teacherLessons.InsertOneAsync(teacherLesson);
     }
 
     public async Task CreateAsync(TeacherLesson teacherLesson)
     {
-        await AddAsync(teacherLesson);
+        await _teacherLessons.InsertOneAsync(teacherLesson);
     }
 
     public async Task UpdateAsync(TeacherLesson teacherLesson)
     {
-        teacherLesson.UpdatedDate = DateTime.UtcNow;
-
         await _teacherLessons.ReplaceOneAsync(
             x => x.Id == teacherLesson.Id,
             teacherLesson
@@ -97,6 +92,12 @@ public class TeacherLessonRepository : ITeacherLessonRepository
 
     public async Task DeleteAsync(string id)
     {
-        await _teacherLessons.DeleteOneAsync(x => x.Id == id);
+        var update = Builders<TeacherLesson>.Update
+            .Set(x => x.IsActive, false);
+
+        await _teacherLessons.UpdateOneAsync(
+            x => x.Id == id,
+            update
+        );
     }
 }

@@ -18,14 +18,28 @@ public class StudentsController : ControllerBase
         _studentService = studentService;
     }
 
-    private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
-    private string? SchoolId => User.FindFirst("schoolId")?.Value;
+    private string? GetCurrentSchoolId()
+    {
+        return User.FindFirst("schoolId")?.Value;
+    }
+
+    private string? GetCurrentRoleName()
+    {
+        return User.FindFirst(ClaimTypes.Role)?.Value;
+    }
 
     [HttpGet]
     [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> GetAll()
     {
-        var result = await _studentService.GetAllForCurrentUserAsync(RoleName, SchoolId);
+        var currentRoleName = GetCurrentRoleName();
+        var currentSchoolId = GetCurrentSchoolId();
+
+        var result = await _studentService.GetAllForCurrentUserAsync(
+            currentRoleName,
+            currentSchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -33,7 +47,15 @@ public class StudentsController : ControllerBase
     [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> GetById(string id)
     {
-        var result = await _studentService.GetByIdForCurrentUserAsync(id, RoleName, SchoolId);
+        var currentRoleName = GetCurrentRoleName();
+        var currentSchoolId = GetCurrentSchoolId();
+
+        var result = await _studentService.GetByIdForCurrentUserAsync(
+            id,
+            currentRoleName,
+            currentSchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -41,7 +63,15 @@ public class StudentsController : ControllerBase
     [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> Create(CreateStudentDto dto)
     {
-        var result = await _studentService.CreateForCurrentUserAsync(dto, RoleName, SchoolId);
+        var currentRoleName = GetCurrentRoleName();
+        var currentSchoolId = GetCurrentSchoolId();
+
+        var result = await _studentService.CreateForCurrentUserAsync(
+            dto,
+            currentRoleName,
+            currentSchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -49,7 +79,15 @@ public class StudentsController : ControllerBase
     [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> Update(UpdateStudentDto dto)
     {
-        var result = await _studentService.UpdateForCurrentUserAsync(dto, RoleName, SchoolId);
+        var currentRoleName = GetCurrentRoleName();
+        var currentSchoolId = GetCurrentSchoolId();
+
+        var result = await _studentService.UpdateForCurrentUserAsync(
+            dto,
+            currentRoleName,
+            currentSchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -57,7 +95,15 @@ public class StudentsController : ControllerBase
     [Authorize(Roles = "schooladmin")]
     public async Task<IActionResult> Delete(string id)
     {
-        var result = await _studentService.DeleteForCurrentUserAsync(id, RoleName, SchoolId);
+        var currentRoleName = GetCurrentRoleName();
+        var currentSchoolId = GetCurrentSchoolId();
+
+        var result = await _studentService.DeleteForCurrentUserAsync(
+            id,
+            currentRoleName,
+            currentSchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 }

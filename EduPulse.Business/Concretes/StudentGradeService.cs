@@ -38,28 +38,34 @@ public class StudentGradeService : IStudentGradeService
     public async Task<Result<List<StudentGradeListDto>>> GetAllAsync()
     {
         var grades = await _studentGradeRepository.GetAllAsync();
-
         var result = grades.Select(MapToListDto).ToList();
 
-        return Result<List<StudentGradeListDto>>.Success(result, "Öğrenci notları başarıyla listelendi.");
+        return Result<List<StudentGradeListDto>>.Success(
+            result,
+            "Öğrenci notları başarıyla listelendi."
+        );
     }
 
     public async Task<Result<List<StudentGradeListDto>>> GetBySchoolIdAsync(string schoolId)
     {
         var grades = await _studentGradeRepository.GetBySchoolIdAsync(schoolId);
-
         var result = grades.Select(MapToListDto).ToList();
 
-        return Result<List<StudentGradeListDto>>.Success(result, "Okula ait notlar başarıyla listelendi.");
+        return Result<List<StudentGradeListDto>>.Success(
+            result,
+            "Okula ait notlar başarıyla listelendi."
+        );
     }
 
     public async Task<Result<List<StudentGradeListDto>>> GetByTeacherIdAsync(string teacherId)
     {
         var grades = await _studentGradeRepository.GetByTeacherIdAsync(teacherId);
-
         var result = grades.Select(MapToListDto).ToList();
 
-        return Result<List<StudentGradeListDto>>.Success(result, "Öğretmene ait notlar başarıyla listelendi.");
+        return Result<List<StudentGradeListDto>>.Success(
+            result,
+            "Öğretmene ait notlar başarıyla listelendi."
+        );
     }
 
     public async Task<Result<List<StudentGradeListDto>>> GetByStudentIdAsync(string studentId)
@@ -70,10 +76,12 @@ public class StudentGradeService : IStudentGradeService
             return Result<List<StudentGradeListDto>>.Failure("Öğrenci bulunamadı.", 404);
 
         var grades = await _studentGradeRepository.GetByStudentIdAsync(studentId);
-
         var result = grades.Select(MapToListDto).ToList();
 
-        return Result<List<StudentGradeListDto>>.Success(result, "Öğrenciye ait notlar başarıyla listelendi.");
+        return Result<List<StudentGradeListDto>>.Success(
+            result,
+            "Öğrenciye ait notlar başarıyla listelendi."
+        );
     }
 
     public async Task<Result<List<StudentGradeListDto>>> GetByLessonIdAsync(string lessonId)
@@ -84,10 +92,12 @@ public class StudentGradeService : IStudentGradeService
             return Result<List<StudentGradeListDto>>.Failure("Ders bulunamadı.", 404);
 
         var grades = await _studentGradeRepository.GetByLessonIdAsync(lessonId);
-
         var result = grades.Select(MapToListDto).ToList();
 
-        return Result<List<StudentGradeListDto>>.Success(result, "Derse ait notlar başarıyla listelendi.");
+        return Result<List<StudentGradeListDto>>.Success(
+            result,
+            "Derse ait notlar başarıyla listelendi."
+        );
     }
 
     public async Task<Result<StudentGradeListDto>> GetByIdAsync(string id)
@@ -99,7 +109,10 @@ public class StudentGradeService : IStudentGradeService
 
         var result = MapToListDto(grade);
 
-        return Result<StudentGradeListDto>.Success(result, "Not kaydı başarıyla getirildi.");
+        return Result<StudentGradeListDto>.Success(
+            result,
+            "Not kaydı başarıyla getirildi."
+        );
     }
 
     public async Task<Result> CreateAsync(CreateStudentGradeDto dto)
@@ -121,6 +134,9 @@ public class StudentGradeService : IStudentGradeService
 
         if (student.SchoolId != dto.SchoolId)
             return Result.Failure("Öğrenci bu okula ait değil.", 400);
+
+        if (lesson.SchoolId != dto.SchoolId)
+            return Result.Failure("Ders bu okula ait değil.", 400);
 
         var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
 
@@ -147,8 +163,6 @@ public class StudentGradeService : IStudentGradeService
         if (existingGrade is not null)
             return Result.Failure("Bu öğrenciye bu dersten zaten not girilmiş. Mevcut not kaydını güncelleyin.", 409);
 
-        var average = (dto.Exam1 + dto.Exam2 + dto.Project + dto.Activity1 + dto.Activity2 + dto.Activity3) / 6.0;
-
         var grade = new StudentGrade
         {
             SchoolId = dto.SchoolId,
@@ -161,7 +175,14 @@ public class StudentGradeService : IStudentGradeService
             Activity1 = dto.Activity1,
             Activity2 = dto.Activity2,
             Activity3 = dto.Activity3,
-            Average = average,
+            Average = CalculateAverage(
+                dto.Exam1,
+                dto.Exam2,
+                dto.Project,
+                dto.Activity1,
+                dto.Activity2,
+                dto.Activity3
+            ),
             IsActive = true
         };
 
@@ -195,6 +216,9 @@ public class StudentGradeService : IStudentGradeService
         if (student.SchoolId != dto.SchoolId)
             return Result.Failure("Öğrenci bu okula ait değil.", 400);
 
+        if (lesson.SchoolId != dto.SchoolId)
+            return Result.Failure("Ders bu okula ait değil.", 400);
+
         var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
 
         if (teacher is null)
@@ -212,8 +236,6 @@ public class StudentGradeService : IStudentGradeService
         if (teacherLesson is null)
             return Result.Failure("Bu öğretmen bu öğrenciye bu dersten not giremez.", 403);
 
-        var average = (dto.Exam1 + dto.Exam2 + dto.Project + dto.Activity1 + dto.Activity2 + dto.Activity3) / 6.0;
-
         grade.SchoolId = dto.SchoolId;
         grade.TeacherId = dto.TeacherId;
         grade.StudentId = dto.StudentId;
@@ -224,7 +246,14 @@ public class StudentGradeService : IStudentGradeService
         grade.Activity1 = dto.Activity1;
         grade.Activity2 = dto.Activity2;
         grade.Activity3 = dto.Activity3;
-        grade.Average = average;
+        grade.Average = CalculateAverage(
+            dto.Exam1,
+            dto.Exam2,
+            dto.Project,
+            dto.Activity1,
+            dto.Activity2,
+            dto.Activity3
+        );
         grade.IsActive = dto.IsActive;
 
         await _studentGradeRepository.UpdateAsync(grade);
@@ -242,6 +271,19 @@ public class StudentGradeService : IStudentGradeService
         await _studentGradeRepository.DeleteAsync(id);
 
         return Result.Success("Öğrenci notu başarıyla silindi.");
+    }
+
+    private static double CalculateAverage(params double?[] grades)
+    {
+        var validGrades = grades
+            .Where(x => x.HasValue)
+            .Select(x => x!.Value)
+            .ToList();
+
+        if (!validGrades.Any())
+            return 0;
+
+        return validGrades.Average();
     }
 
     private static StudentGradeListDto MapToListDto(StudentGrade grade)

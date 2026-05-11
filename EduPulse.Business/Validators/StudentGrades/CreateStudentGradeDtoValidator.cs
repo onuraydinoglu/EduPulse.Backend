@@ -23,11 +23,35 @@ public class CreateStudentGradeDtoValidator : AbstractValidator<CreateStudentGra
             .NotEmpty()
             .WithMessage("Ders seçilmelidir.");
 
-        RuleFor(x => x.Exam1).InclusiveBetween(0, 100);
-        RuleFor(x => x.Exam2).InclusiveBetween(0, 100);
-        RuleFor(x => x.Project).InclusiveBetween(0, 100);
-        RuleFor(x => x.Activity1).InclusiveBetween(0, 100);
-        RuleFor(x => x.Activity2).InclusiveBetween(0, 100);
-        RuleFor(x => x.Activity3).InclusiveBetween(0, 100);
+        RuleFor(x => x)
+            .Must(HasAtLeastOneGrade)
+            .WithMessage("En az bir not alanı girilmelidir.");
+
+        AddGradeRule(x => x.Exam1, "1. sınav");
+        AddGradeRule(x => x.Exam2, "2. sınav");
+        AddGradeRule(x => x.Project, "Proje");
+        AddGradeRule(x => x.Activity1, "Sınıf içi 1");
+        AddGradeRule(x => x.Activity2, "Sınıf içi 2");
+        AddGradeRule(x => x.Activity3, "Sınıf içi 3");
+    }
+
+    private void AddGradeRule(
+        System.Linq.Expressions.Expression<Func<CreateStudentGradeDto, double?>> expression,
+        string fieldName)
+    {
+        RuleFor(expression)
+            .InclusiveBetween(0, 100)
+            .When(x => expression.Compile()(x).HasValue)
+            .WithMessage($"{fieldName} notu 0 ile 100 arasında olmalıdır.");
+    }
+
+    private static bool HasAtLeastOneGrade(CreateStudentGradeDto dto)
+    {
+        return dto.Exam1.HasValue ||
+               dto.Exam2.HasValue ||
+               dto.Project.HasValue ||
+               dto.Activity1.HasValue ||
+               dto.Activity2.HasValue ||
+               dto.Activity3.HasValue;
     }
 }

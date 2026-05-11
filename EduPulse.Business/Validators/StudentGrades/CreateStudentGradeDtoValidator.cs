@@ -27,22 +27,35 @@ public class CreateStudentGradeDtoValidator : AbstractValidator<CreateStudentGra
             .Must(HasAtLeastOneGrade)
             .WithMessage("En az bir not alanı girilmelidir.");
 
-        AddGradeRule(x => x.Exam1, "1. sınav");
-        AddGradeRule(x => x.Exam2, "2. sınav");
-        AddGradeRule(x => x.Project, "Proje");
-        AddGradeRule(x => x.Activity1, "Sınıf içi 1");
-        AddGradeRule(x => x.Activity2, "Sınıf içi 2");
-        AddGradeRule(x => x.Activity3, "Sınıf içi 3");
-    }
-
-    private void AddGradeRule(
-        System.Linq.Expressions.Expression<Func<CreateStudentGradeDto, double?>> expression,
-        string fieldName)
-    {
-        RuleFor(expression)
+        RuleFor(x => x.Exam1)
             .InclusiveBetween(0, 100)
-            .When(x => expression.Compile()(x).HasValue)
-            .WithMessage($"{fieldName} notu 0 ile 100 arasında olmalıdır.");
+            .When(x => x.Exam1.HasValue)
+            .WithMessage("1. sınav notu 0 ile 100 arasında olmalıdır.");
+
+        RuleFor(x => x.Exam2)
+            .InclusiveBetween(0, 100)
+            .When(x => x.Exam2.HasValue)
+            .WithMessage("2. sınav notu 0 ile 100 arasında olmalıdır.");
+
+        RuleFor(x => x.Project)
+            .InclusiveBetween(0, 100)
+            .When(x => x.Project.HasValue)
+            .WithMessage("Proje notu 0 ile 100 arasında olmalıdır.");
+
+        RuleFor(x => x.Activity1)
+            .InclusiveBetween(0, 100)
+            .When(x => x.Activity1.HasValue)
+            .WithMessage("Sınıf içi 1 notu 0 ile 100 arasında olmalıdır.");
+
+        RuleFor(x => x.Activity2)
+            .InclusiveBetween(0, 100)
+            .When(x => x.Activity2.HasValue)
+            .WithMessage("Sınıf içi 2 notu 0 ile 100 arasında olmalıdır.");
+
+        RuleFor(x => x.Activity3)
+            .InclusiveBetween(0, 100)
+            .When(x => x.Activity3.HasValue)
+            .WithMessage("Sınıf içi 3 notu 0 ile 100 arasında olmalıdır.");
     }
 
     private static bool HasAtLeastOneGrade(CreateStudentGradeDto dto)

@@ -3,8 +3,10 @@
 public class UpdateStudentGradeDto
 {
     public string Id { get; set; } = null!;
-    public string SchoolId { get; set; } = null!;
-    public string TeacherId { get; set; } = null!;
+
+    public string? SchoolId { get; set; }
+    public string? TeacherId { get; set; }
+
     public string StudentId { get; set; } = null!;
     public string LessonId { get; set; } = null!;
 

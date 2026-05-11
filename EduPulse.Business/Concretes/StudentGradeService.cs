@@ -153,7 +153,12 @@ public class StudentGradeService : IStudentGradeService
         );
 
         if (teacherLesson is null)
-            return Result.Failure("Bu öğretmen bu öğrenciye bu dersten not giremez.", 403);
+        {
+            return Result.Failure(
+                "Bu öğretmen bu öğrenciye bu dersten not giremez. Öğretmenin ilgili sınıfa ve derse atanmış olduğundan emin olun.",
+                403
+            );
+        }
 
         var existingGrade = await _studentGradeRepository.GetByStudentAndLessonAsync(
             dto.StudentId,
@@ -161,7 +166,12 @@ public class StudentGradeService : IStudentGradeService
         );
 
         if (existingGrade is not null)
-            return Result.Failure("Bu öğrenciye bu dersten zaten not girilmiş. Mevcut not kaydını güncelleyin.", 409);
+        {
+            return Result.Failure(
+                "Bu öğrenciye bu dersten zaten not girilmiş. Mevcut not kaydını güncelleyin.",
+                409
+            );
+        }
 
         var grade = new StudentGrade
         {
@@ -234,7 +244,12 @@ public class StudentGradeService : IStudentGradeService
         );
 
         if (teacherLesson is null)
-            return Result.Failure("Bu öğretmen bu öğrenciye bu dersten not giremez.", 403);
+        {
+            return Result.Failure(
+                "Bu öğretmen bu öğrenciye bu dersten not giremez. Öğretmenin ilgili sınıfa ve derse atanmış olduğundan emin olun.",
+                403
+            );
+        }
 
         grade.SchoolId = dto.SchoolId;
         grade.TeacherId = dto.TeacherId;
@@ -283,7 +298,7 @@ public class StudentGradeService : IStudentGradeService
         if (!validGrades.Any())
             return 0;
 
-        return validGrades.Average();
+        return Math.Round(validGrades.Average(), 2);
     }
 
     private static StudentGradeListDto MapToListDto(StudentGrade grade)

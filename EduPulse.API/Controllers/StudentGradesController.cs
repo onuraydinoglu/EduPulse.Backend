@@ -1,8 +1,8 @@
-﻿using System.Security.Claims;
-using EduPulse.Business.Abstracts;
+﻿using EduPulse.Business.Abstracts;
 using EduPulse.DTOs.StudentGrades;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace EduPulse.API.Controllers;
 
@@ -41,7 +41,11 @@ public class StudentGradesController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Okul bilgisi token içinde bulunamadı."
+            });
         }
 
         var role = GetRole();
@@ -52,21 +56,24 @@ public class StudentGradesController : ControllerBase
 
             if (string.IsNullOrWhiteSpace(teacherId))
             {
-                return Unauthorized("Öğretmen bilgisi token içinde bulunamadı.");
+                return Unauthorized(new
+                {
+                    StatusCode = 401,
+                    Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
+                });
             }
 
             var teacherGrades = await _studentGradeService.GetByTeacherIdAsync(teacherId);
 
-            var filteredTeacherGrades = teacherGrades.Data?
+            teacherGrades.Data = teacherGrades.Data?
                 .Where(x => x.SchoolId == schoolId)
-                .ToList();
-
-            teacherGrades.Data = filteredTeacherGrades ?? new List<StudentGradeListDto>();
+                .ToList() ?? new List<StudentGradeListDto>();
 
             return StatusCode(teacherGrades.StatusCode, teacherGrades);
         }
 
         var result = await _studentGradeService.GetBySchoolIdAsync(schoolId);
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -78,14 +85,18 @@ public class StudentGradesController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Okul bilgisi token içinde bulunamadı."
+            });
         }
 
         var result = await _studentGradeService.GetByIdAsync(id);
 
         if (result.Data == null || result.Data.SchoolId != schoolId)
         {
-            return Forbid("Bu kayda erişim yetkiniz yok.");
+            return Forbid();
         }
 
         var role = GetRole();
@@ -96,12 +107,16 @@ public class StudentGradesController : ControllerBase
 
             if (string.IsNullOrWhiteSpace(teacherId))
             {
-                return Unauthorized("Öğretmen bilgisi token içinde bulunamadı.");
+                return Unauthorized(new
+                {
+                    StatusCode = 401,
+                    Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
+                });
             }
 
             if (result.Data.TeacherId != teacherId)
             {
-                return Forbid("Bu nota erişim yetkiniz yok.");
+                return Forbid();
             }
         }
 
@@ -116,16 +131,18 @@ public class StudentGradesController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Okul bilgisi token içinde bulunamadı."
+            });
         }
 
         var result = await _studentGradeService.GetByStudentIdAsync(studentId);
 
-        var filteredData = result.Data?
+        result.Data = result.Data?
             .Where(x => x.SchoolId == schoolId)
-            .ToList();
-
-        result.Data = filteredData ?? new List<StudentGradeListDto>();
+            .ToList() ?? new List<StudentGradeListDto>();
 
         return StatusCode(result.StatusCode, result);
     }
@@ -138,16 +155,18 @@ public class StudentGradesController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Okul bilgisi token içinde bulunamadı."
+            });
         }
 
         var result = await _studentGradeService.GetByLessonIdAsync(lessonId);
 
-        var filteredData = result.Data?
+        result.Data = result.Data?
             .Where(x => x.SchoolId == schoolId)
-            .ToList();
-
-        result.Data = filteredData ?? new List<StudentGradeListDto>();
+            .ToList() ?? new List<StudentGradeListDto>();
 
         return StatusCode(result.StatusCode, result);
     }
@@ -161,18 +180,27 @@ public class StudentGradesController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Okul bilgisi token içinde bulunamadı."
+            });
         }
 
         if (string.IsNullOrWhiteSpace(teacherId))
         {
-            return Unauthorized("Öğretmen bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
+            });
         }
 
         dto.SchoolId = schoolId;
         dto.TeacherId = teacherId;
 
         var result = await _studentGradeService.CreateAsync(dto);
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -185,30 +213,39 @@ public class StudentGradesController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Okul bilgisi token içinde bulunamadı."
+            });
         }
 
         if (string.IsNullOrWhiteSpace(teacherId))
         {
-            return Unauthorized("Öğretmen bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
+            });
         }
 
         var existingGrade = await _studentGradeService.GetByIdAsync(dto.Id);
 
         if (existingGrade.Data == null || existingGrade.Data.SchoolId != schoolId)
         {
-            return Forbid("Bu kaydı güncelleme yetkiniz yok.");
+            return Forbid();
         }
 
         if (existingGrade.Data.TeacherId != teacherId)
         {
-            return Forbid("Bu notu sadece ekleyen öğretmen güncelleyebilir.");
+            return Forbid();
         }
 
         dto.SchoolId = schoolId;
         dto.TeacherId = teacherId;
 
         var result = await _studentGradeService.UpdateAsync(dto);
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -221,27 +258,36 @@ public class StudentGradesController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
-            return Unauthorized("Okul bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Okul bilgisi token içinde bulunamadı."
+            });
         }
 
         if (string.IsNullOrWhiteSpace(teacherId))
         {
-            return Unauthorized("Öğretmen bilgisi token içinde bulunamadı.");
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
+            });
         }
 
         var grade = await _studentGradeService.GetByIdAsync(id);
 
         if (grade.Data == null || grade.Data.SchoolId != schoolId)
         {
-            return Forbid("Bu kaydı silme yetkiniz yok.");
+            return Forbid();
         }
 
         if (grade.Data.TeacherId != teacherId)
         {
-            return Forbid("Bu notu sadece ekleyen öğretmen silebilir.");
+            return Forbid();
         }
 
         var result = await _studentGradeService.DeleteAsync(id);
+
         return StatusCode(result.StatusCode, result);
     }
 }

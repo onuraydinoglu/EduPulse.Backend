@@ -18,7 +18,6 @@ public class TeacherLessonRepository : ITeacherLessonRepository
     {
         return await _teacherLessons
             .Find(_ => true)
-            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 
@@ -26,7 +25,6 @@ public class TeacherLessonRepository : ITeacherLessonRepository
     {
         return await _teacherLessons
             .Find(x => x.SchoolId == schoolId)
-            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 
@@ -34,7 +32,6 @@ public class TeacherLessonRepository : ITeacherLessonRepository
     {
         return await _teacherLessons
             .Find(x => x.TeacherId == teacherId)
-            .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
 
@@ -56,7 +53,8 @@ public class TeacherLessonRepository : ITeacherLessonRepository
                 x.SchoolId == schoolId &&
                 x.TeacherId == teacherId &&
                 x.LessonId == lessonId &&
-                x.ClassroomId == classroomId)
+                x.ClassroomId == classroomId &&
+                x.IsActive)
             .FirstOrDefaultAsync();
     }
 
@@ -69,22 +67,23 @@ public class TeacherLessonRepository : ITeacherLessonRepository
             .Find(x =>
                 x.TeacherId == teacherId &&
                 x.LessonId == lessonId &&
-                x.ClassroomId == classroomId)
+                x.ClassroomId == classroomId &&
+                x.IsActive)
             .FirstOrDefaultAsync();
     }
 
     public async Task AddAsync(TeacherLesson teacherLesson)
     {
-        teacherLesson.CreatedDate = DateTime.UtcNow;
-        teacherLesson.UpdatedDate = null;
+        await _teacherLessons.InsertOneAsync(teacherLesson);
+    }
 
+    public async Task CreateAsync(TeacherLesson teacherLesson)
+    {
         await _teacherLessons.InsertOneAsync(teacherLesson);
     }
 
     public async Task UpdateAsync(TeacherLesson teacherLesson)
     {
-        teacherLesson.UpdatedDate = DateTime.UtcNow;
-
         await _teacherLessons.ReplaceOneAsync(
             x => x.Id == teacherLesson.Id,
             teacherLesson
@@ -93,13 +92,6 @@ public class TeacherLessonRepository : ITeacherLessonRepository
 
     public async Task DeleteAsync(string id)
     {
-        var update = Builders<TeacherLesson>.Update
-            .Set(x => x.IsActive, false)
-            .Set(x => x.UpdatedDate, DateTime.UtcNow);
-
-        await _teacherLessons.UpdateOneAsync(
-            x => x.Id == id,
-            update
-        );
+        await _teacherLessons.DeleteOneAsync(x => x.Id == id);
     }
 }

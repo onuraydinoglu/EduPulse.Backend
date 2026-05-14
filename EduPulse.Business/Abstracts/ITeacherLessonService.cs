@@ -8,17 +8,17 @@ public interface ITeacherLessonService
     Task<Result<List<TeacherLessonListDto>>> GetAllForCurrentUserAsync(
         string? roleName,
         string? schoolId,
-        string? currentUserId
-    );
+        string? currentUserId);
 
     Task<Result<TeacherLessonListDto>> GetByIdForCurrentUserAsync(
         string id,
         string? roleName,
         string? schoolId,
-        string? currentUserId
-    );
+        string? currentUserId);
 
-    Task<Result> CreateAsync(CreateTeacherLessonDto dto, string? schoolId);
-    Task<Result> UpdateAsync(UpdateTeacherLessonDto dto, string? schoolId);
-    Task<Result> DeleteAsync(string id);
+    Task<Result<string>> CreateAsync(CreateTeacherLessonDto dto, string? schoolId);
+
+    Task<Result<string>> UpdateAsync(UpdateTeacherLessonDto dto, string? schoolId);
+
+    Task<Result<string>> DeleteAsync(string id);
 }

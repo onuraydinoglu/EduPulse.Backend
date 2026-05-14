@@ -19,7 +19,9 @@ public class TeacherLessonsController : ControllerBase
     }
 
     private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
+
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
+
     private string? CurrentUserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
     [HttpGet]
@@ -54,6 +56,7 @@ public class TeacherLessonsController : ControllerBase
     public async Task<IActionResult> Create(CreateTeacherLessonDto dto)
     {
         var result = await _teacherLessonService.CreateAsync(dto, SchoolId);
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -62,6 +65,7 @@ public class TeacherLessonsController : ControllerBase
     public async Task<IActionResult> Update(UpdateTeacherLessonDto dto)
     {
         var result = await _teacherLessonService.UpdateAsync(dto, SchoolId);
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -70,6 +74,7 @@ public class TeacherLessonsController : ControllerBase
     public async Task<IActionResult> Delete(string id)
     {
         var result = await _teacherLessonService.DeleteAsync(id);
+
         return StatusCode(result.StatusCode, result);
     }
 }

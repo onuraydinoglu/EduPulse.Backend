@@ -5,7 +5,9 @@ namespace EduPulse.Repository.Abstracts;
 public interface ITeacherLessonRepository
 {
     Task<List<TeacherLesson>> GetAllAsync();
+
     Task<List<TeacherLesson>> GetBySchoolIdAsync(string schoolId);
+
     Task<List<TeacherLesson>> GetByTeacherIdAsync(string teacherId);
 
     Task<TeacherLesson?> GetByIdAsync(string id);
@@ -14,17 +16,16 @@ public interface ITeacherLessonRepository
         string schoolId,
         string teacherId,
         string lessonId,
-        string classroomId
-    );
+        string classroomId);
 
     Task<TeacherLesson?> GetByTeacherLessonAndClassroomAsync(
         string teacherId,
         string lessonId,
-        string classroomId
-    );
+        string classroomId);
 
     Task AddAsync(TeacherLesson teacherLesson);
-    Task CreateAsync(TeacherLesson teacherLesson);
+
     Task UpdateAsync(TeacherLesson teacherLesson);
+
     Task DeleteAsync(string id);
 }

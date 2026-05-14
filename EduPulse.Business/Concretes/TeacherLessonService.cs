@@ -3,7 +3,6 @@ using EduPulse.DTOs.Common;
 using EduPulse.DTOs.TeacherLessons;
 using EduPulse.Entities.TeacherLessons;
 using EduPulse.Repository.Abstracts;
-using EduPulse.Repository.Concretes;
 
 namespace EduPulse.Business.Concretes;
 
@@ -67,7 +66,8 @@ public class TeacherLessonService : ITeacherLessonService
 
         foreach (var teacherLesson in teacherLessons)
         {
-            result.Add(await MapToDtoAsync(teacherLesson));
+            var dto = await MapToDtoAsync(teacherLesson);
+            result.Add(dto);
         }
 
         return Result<List<TeacherLessonListDto>>.Success(
@@ -120,21 +120,26 @@ public class TeacherLessonService : ITeacherLessonService
         );
     }
 
-    public async Task<Result> CreateAsync(CreateTeacherLessonDto dto, string? schoolId)
+    public async Task<Result<string>> CreateAsync(CreateTeacherLessonDto dto, string? schoolId)
     {
         if (string.IsNullOrWhiteSpace(schoolId))
-            return Result.Failure("Okul bilgisi bulunamadı.", 400);
+            return Result<string>.Failure("Okul bilgisi bulunamadı.", 400);
 
         if (string.IsNullOrWhiteSpace(dto.TeacherId))
-            return Result.Failure("Öğretmen seçimi zorunludur.", 400);
+            return Result<string>.Failure("Öğretmen seçimi zorunludur.", 400);
 
         if (string.IsNullOrWhiteSpace(dto.LessonId))
-            return Result.Failure("Ders seçimi zorunludur.", 400);
+            return Result<string>.Failure("Ders seçimi zorunludur.", 400);
 
-        var selectedClassroomIds = dto.ClassroomIds?
-            .Where(id => !string.IsNullOrWhiteSpace(id))
-            .Distinct()
-            .ToList() ?? new List<string>();
+        var selectedClassroomIds = new List<string>();
+
+        if (dto.ClassroomIds is not null && dto.ClassroomIds.Any())
+        {
+            selectedClassroomIds = dto.ClassroomIds
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
+        }
 
         if (!string.IsNullOrWhiteSpace(dto.ClassroomId) &&
             !selectedClassroomIds.Contains(dto.ClassroomId))
@@ -143,24 +148,28 @@ public class TeacherLessonService : ITeacherLessonService
         }
 
         if (!selectedClassroomIds.Any())
-            return Result.Failure("En az bir sınıf seçilmelidir.", 400);
+            return Result<string>.Failure("En az bir sınıf seçilmelidir.", 400);
 
         var lesson = await _lessonRepository.GetByIdAsync(dto.LessonId);
+
         if (lesson is null || lesson.SchoolId != schoolId)
-            return Result.Failure("Ders bulunamadı.", 404);
+            return Result<string>.Failure("Ders bulunamadı.", 404);
 
         var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
+
         if (teacher is null || teacher.SchoolId != schoolId)
-            return Result.Failure("Öğretmen bulunamadı.", 404);
+            return Result<string>.Failure("Öğretmen bulunamadı.", 404);
 
         var createdCount = 0;
+        var reActivatedCount = 0;
         var skippedCount = 0;
 
         foreach (var classroomId in selectedClassroomIds)
         {
             var classroom = await _classroomRepository.GetByIdAsync(classroomId);
+
             if (classroom is null || classroom.SchoolId != schoolId)
-                return Result.Failure("Seçilen sınıflardan biri bulunamadı.", 404);
+                return Result<string>.Failure("Seçilen sınıflardan biri bulunamadı.", 404);
 
             var duplicate = await _teacherLessonRepository.GetDuplicateAsync(
                 schoolId,
@@ -171,7 +180,17 @@ public class TeacherLessonService : ITeacherLessonService
 
             if (duplicate is not null)
             {
-                skippedCount++;
+                if (!duplicate.IsActive)
+                {
+                    duplicate.IsActive = true;
+                    await _teacherLessonRepository.UpdateAsync(duplicate);
+                    reActivatedCount++;
+                }
+                else
+                {
+                    skippedCount++;
+                }
+
                 continue;
             }
 
@@ -188,43 +207,68 @@ public class TeacherLessonService : ITeacherLessonService
             createdCount++;
         }
 
-        if (createdCount == 0)
-            return Result.Failure("Seçilen sınıfların tamamı için bu atama zaten mevcut.", 400);
+        if (createdCount == 0 && reActivatedCount == 0)
+            return Result<string>.Failure("Seçilen sınıfların tamamı için bu atama zaten mevcut.", 400);
 
-        var message = skippedCount > 0
-            ? $"{createdCount} sınıf için atama oluşturuldu. {skippedCount} mevcut atama tekrar eklenmedi."
-            : $"{createdCount} sınıf için atama başarıyla oluşturuldu.";
+        var messageParts = new List<string>();
 
-        return Result.Success(message, 201);
+        if (createdCount > 0)
+            messageParts.Add($"{createdCount} sınıf için yeni ders ataması oluşturuldu.");
+
+        if (reActivatedCount > 0)
+            messageParts.Add($"{reActivatedCount} pasif ders ataması tekrar aktif hale getirildi.");
+
+        if (skippedCount > 0)
+            messageParts.Add($"{skippedCount} mevcut aktif atama tekrar eklenmedi.");
+
+        var message = string.Join(" ", messageParts);
+
+        return Result<string>.Success(
+            message,
+            message,
+            201
+        );
     }
-        
-    public async Task<Result> UpdateAsync(UpdateTeacherLessonDto dto, string? schoolId)
+
+    public async Task<Result<string>> UpdateAsync(UpdateTeacherLessonDto dto, string? schoolId)
     {
         if (string.IsNullOrWhiteSpace(schoolId))
-            return Result.Failure("Okul bilgisi bulunamadı.", 400);
+            return Result<string>.Failure("Okul bilgisi bulunamadı.", 400);
+
+        if (string.IsNullOrWhiteSpace(dto.Id))
+            return Result<string>.Failure("Kayıt id bilgisi zorunludur.", 400);
+
+        if (string.IsNullOrWhiteSpace(dto.TeacherId))
+            return Result<string>.Failure("Öğretmen seçimi zorunludur.", 400);
+
+        if (string.IsNullOrWhiteSpace(dto.LessonId))
+            return Result<string>.Failure("Ders seçimi zorunludur.", 400);
+
+        if (string.IsNullOrWhiteSpace(dto.ClassroomId))
+            return Result<string>.Failure("Sınıf seçimi zorunludur.", 400);
 
         var teacherLesson = await _teacherLessonRepository.GetByIdAsync(dto.Id);
 
         if (teacherLesson is null)
-            return Result.Failure("Kayıt bulunamadı.", 404);
+            return Result<string>.Failure("Kayıt bulunamadı.", 404);
 
         if (teacherLesson.SchoolId != schoolId)
-            return Result.Failure("Bu kaydı güncelleme yetkiniz yok.", 403);
+            return Result<string>.Failure("Bu kaydı güncelleme yetkiniz yok.", 403);
 
         var classroom = await _classroomRepository.GetByIdAsync(dto.ClassroomId);
 
         if (classroom is null || classroom.SchoolId != schoolId)
-            return Result.Failure("Sınıf bulunamadı.", 404);
+            return Result<string>.Failure("Sınıf bulunamadı.", 404);
 
         var lesson = await _lessonRepository.GetByIdAsync(dto.LessonId);
 
         if (lesson is null || lesson.SchoolId != schoolId)
-            return Result.Failure("Ders bulunamadı.", 404);
+            return Result<string>.Failure("Ders bulunamadı.", 404);
 
         var teacher = await _teacherRepository.GetByIdAsync(dto.TeacherId);
 
         if (teacher is null || teacher.SchoolId != schoolId)
-            return Result.Failure("Öğretmen bulunamadı.", 404);
+            return Result<string>.Failure("Öğretmen bulunamadı.", 404);
 
         var duplicate = await _teacherLessonRepository.GetDuplicateAsync(
             schoolId,
@@ -234,7 +278,7 @@ public class TeacherLessonService : ITeacherLessonService
         );
 
         if (duplicate is not null && duplicate.Id != dto.Id)
-            return Result.Failure("Bu öğretmen bu sınıfta bu derse zaten atanmış.", 400);
+            return Result<string>.Failure("Bu öğretmen bu sınıfta bu derse zaten atanmış.", 400);
 
         teacherLesson.TeacherId = dto.TeacherId;
         teacherLesson.LessonId = dto.LessonId;
@@ -243,19 +287,27 @@ public class TeacherLessonService : ITeacherLessonService
 
         await _teacherLessonRepository.UpdateAsync(teacherLesson);
 
-        return Result.Success("Ders-öğretmen-sınıf bağlantısı güncellendi.", 200);
+        return Result<string>.Success(
+            "Ders ataması başarıyla güncellendi.",
+            "Ders ataması başarıyla güncellendi.",
+            200
+        );
     }
 
-    public async Task<Result> DeleteAsync(string id)
+    public async Task<Result<string>> DeleteAsync(string id)
     {
         var teacherLesson = await _teacherLessonRepository.GetByIdAsync(id);
 
         if (teacherLesson is null)
-            return Result.Failure("Kayıt bulunamadı.", 404);
+            return Result<string>.Failure("Kayıt bulunamadı.", 404);
 
         await _teacherLessonRepository.DeleteAsync(id);
 
-        return Result.Success("Ders ataması kalıcı olarak silindi.", 200);
+        return Result<string>.Success(
+            "Ders ataması pasife alındı.",
+            "Ders ataması pasife alındı.",
+            200
+        );
     }
 
     private async Task<TeacherLessonListDto> MapToDtoAsync(TeacherLesson teacherLesson)
@@ -263,6 +315,7 @@ public class TeacherLessonService : ITeacherLessonService
         var teacher = await _teacherRepository.GetByIdAsync(teacherLesson.TeacherId);
         var lesson = await _lessonRepository.GetByIdAsync(teacherLesson.LessonId);
         var classroom = await _classroomRepository.GetByIdAsync(teacherLesson.ClassroomId);
+
         var user = teacher is not null
             ? await _userRepository.GetByIdAsync(teacher.UserId)
             : null;
@@ -271,12 +324,20 @@ public class TeacherLessonService : ITeacherLessonService
         {
             Id = teacherLesson.Id,
             SchoolId = teacherLesson.SchoolId,
+
             TeacherId = teacherLesson.TeacherId,
-            TeacherFullName = user is not null ? $"{user.FirstName} {user.LastName}" : "-",
+            TeacherFullName = user is not null
+                ? $"{user.FirstName} {user.LastName}"
+                : "-",
+
             LessonId = teacherLesson.LessonId,
             LessonName = lesson?.Name ?? "-",
+
             ClassroomId = teacherLesson.ClassroomId,
-            ClassroomName = classroom is not null ? $"{classroom.Grade}-{classroom.Section}" : "-",
+            ClassroomName = classroom is not null
+                ? $"{classroom.Grade}-{classroom.Section}"
+                : "-",
+
             IsActive = teacherLesson.IsActive
         };
     }

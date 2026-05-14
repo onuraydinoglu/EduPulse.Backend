@@ -31,7 +31,7 @@ public class EventService : IEventService
 
     public async Task<Result<List<EventListDto>>> GetAllForCurrentUserAsync(string? roleName, string? schoolId)
     {
-        if (roleName != "schooladmin" && roleName != "officer")
+        if (roleName != "schooladmin" && roleName != "officer" && roleName != "teacher")
             return Result<List<EventListDto>>.Failure("Etkinlikleri listeleme yetkiniz yok.", 403);
 
         if (string.IsNullOrWhiteSpace(schoolId))
@@ -51,7 +51,7 @@ public class EventService : IEventService
 
     public async Task<Result<EventListDto>> GetByIdForCurrentUserAsync(string id, string? roleName, string? schoolId)
     {
-        if (roleName != "schooladmin" && roleName != "officer")
+        if (roleName != "schooladmin" && roleName != "officer" && roleName != "teacher")
             return Result<EventListDto>.Failure("Etkinlik görüntüleme yetkiniz yok.", 403);
 
         if (string.IsNullOrWhiteSpace(schoolId))

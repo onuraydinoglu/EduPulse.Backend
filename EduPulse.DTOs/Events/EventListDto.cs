@@ -7,9 +7,10 @@ public class EventListDto
 
     public string Name { get; set; } = null!;
     public string? Description { get; set; }
-    public string Location { get; set; } = null!;
 
+    public string Location { get; set; } = null!;
     public DateTime EventDate { get; set; }
+
     public string StartTime { get; set; } = null!;
     public string? EndTime { get; set; }
 
@@ -18,6 +19,7 @@ public class EventListDto
 
     public int? Quota { get; set; }
 
+    public List<string> ResponsibleTeacherIds { get; set; } = new();
     public List<EventTeacherDto> ResponsibleTeachers { get; set; } = new();
 
     public bool IsActive { get; set; }

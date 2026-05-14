@@ -244,6 +244,7 @@ public class EventService : IEventService
             IsPaid = eventEntity.IsPaid,
             PricePerStudent = eventEntity.PricePerStudent,
             Quota = eventEntity.Quota,
+            ResponsibleTeacherIds = eventEntity.ResponsibleTeacherIds,
             ResponsibleTeachers = responsibleTeachers,
             IsActive = eventEntity.IsActive
         };

@@ -54,7 +54,6 @@ public class TeacherLessonRepository : ITeacherLessonRepository
         return await _teacherLessons
             .Find(x =>
                 x.SchoolId == schoolId &&
-                x.TeacherId == teacherId &&
                 x.LessonId == lessonId &&
                 x.ClassroomId == classroomId)
             .FirstOrDefaultAsync();

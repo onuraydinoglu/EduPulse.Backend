@@ -242,22 +242,21 @@ public class StudentService : IStudentService
             return Result.Failure("Okul bilgisi bulunamadı.", 400);
 
         var student = await _studentRepository.GetByIdAsync(id);
+
         if (student is null)
             return Result.Failure("Öğrenci bulunamadı.", 404);
 
         if (student.SchoolId != currentSchoolId)
             return Result.Failure("Bu öğrenciyi silme yetkiniz yok.", 403);
 
-        var user = await _userRepository.GetByIdAsync(student.UserId);
-
-        if (user is not null)
-        {
-            user.IsActive = false;
-            user.UpdatedDate = DateTime.UtcNow;
-            await _userRepository.UpdateAsync(user);
-        }
+        var userId = student.UserId;
 
         await _studentRepository.DeleteAsync(id);
+
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            await _userRepository.DeleteAsync(userId);
+        }
 
         return Result.Success("Öğrenci başarıyla silindi.");
     }

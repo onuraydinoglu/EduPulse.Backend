@@ -82,10 +82,6 @@ public class StudentRepository : IStudentRepository
 
     public async Task DeleteAsync(string id)
     {
-        var update = Builders<Student>.Update
-            .Set(x => x.IsActive, false)
-            .Set(x => x.UpdatedDate, DateTime.UtcNow);
-
-        await _students.UpdateOneAsync(x => x.Id == id, update);
+        await _students.DeleteOneAsync(x => x.Id == id);
     }
 }

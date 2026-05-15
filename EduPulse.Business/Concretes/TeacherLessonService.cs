@@ -70,8 +70,14 @@ public class TeacherLessonService : ITeacherLessonService
             result.Add(dto);
         }
 
+        var orderedResult = result
+            .OrderBy(x => x.TeacherFullName, StringComparer.Create(new System.Globalization.CultureInfo("tr-TR"), false))
+            .ThenBy(x => x.LessonName, StringComparer.Create(new System.Globalization.CultureInfo("tr-TR"), false))
+            .ThenBy(x => x.ClassroomName, StringComparer.Create(new System.Globalization.CultureInfo("tr-TR"), false))
+            .ToList();
+
         return Result<List<TeacherLessonListDto>>.Success(
-            result,
+            orderedResult,
             "Ders atamaları başarıyla listelendi.",
             200
         );
@@ -161,7 +167,6 @@ public class TeacherLessonService : ITeacherLessonService
             return Result<string>.Failure("Öğretmen bulunamadı.", 404);
 
         var createdCount = 0;
-        var reActivatedCount = 0;
         var skippedCount = 0;
 
         foreach (var classroomId in selectedClassroomIds)
@@ -180,17 +185,7 @@ public class TeacherLessonService : ITeacherLessonService
 
             if (duplicate is not null)
             {
-                if (!duplicate.IsActive)
-                {
-                    duplicate.IsActive = true;
-                    await _teacherLessonRepository.UpdateAsync(duplicate);
-                    reActivatedCount++;
-                }
-                else
-                {
-                    skippedCount++;
-                }
-
+                skippedCount++;
                 continue;
             }
 
@@ -199,15 +194,14 @@ public class TeacherLessonService : ITeacherLessonService
                 SchoolId = schoolId,
                 TeacherId = dto.TeacherId,
                 LessonId = dto.LessonId,
-                ClassroomId = classroomId,
-                IsActive = true
+                ClassroomId = classroomId
             };
 
             await _teacherLessonRepository.AddAsync(teacherLesson);
             createdCount++;
         }
 
-        if (createdCount == 0 && reActivatedCount == 0)
+        if (createdCount == 0)
             return Result<string>.Failure("Seçilen sınıfların tamamı için bu atama zaten mevcut.", 400);
 
         var messageParts = new List<string>();
@@ -215,11 +209,8 @@ public class TeacherLessonService : ITeacherLessonService
         if (createdCount > 0)
             messageParts.Add($"{createdCount} sınıf için yeni ders ataması oluşturuldu.");
 
-        if (reActivatedCount > 0)
-            messageParts.Add($"{reActivatedCount} pasif ders ataması tekrar aktif hale getirildi.");
-
         if (skippedCount > 0)
-            messageParts.Add($"{skippedCount} mevcut aktif atama tekrar eklenmedi.");
+            messageParts.Add($"{skippedCount} mevcut atama tekrar eklenmedi.");
 
         var message = string.Join(" ", messageParts);
 
@@ -283,7 +274,6 @@ public class TeacherLessonService : ITeacherLessonService
         teacherLesson.TeacherId = dto.TeacherId;
         teacherLesson.LessonId = dto.LessonId;
         teacherLesson.ClassroomId = dto.ClassroomId;
-        teacherLesson.IsActive = dto.IsActive;
 
         await _teacherLessonRepository.UpdateAsync(teacherLesson);
 
@@ -304,8 +294,8 @@ public class TeacherLessonService : ITeacherLessonService
         await _teacherLessonRepository.DeleteAsync(id);
 
         return Result<string>.Success(
-            "Ders ataması pasife alındı.",
-            "Ders ataması pasife alındı.",
+            "Ders ataması başarıyla silindi.",
+            "Ders ataması başarıyla silindi.",
             200
         );
     }
@@ -336,9 +326,7 @@ public class TeacherLessonService : ITeacherLessonService
             ClassroomId = teacherLesson.ClassroomId,
             ClassroomName = classroom is not null
                 ? $"{classroom.Grade}-{classroom.Section}"
-                : "-",
-
-            IsActive = teacherLesson.IsActive
+                : "-"
         };
     }
 }

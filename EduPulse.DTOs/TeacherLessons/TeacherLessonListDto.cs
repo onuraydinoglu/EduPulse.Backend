@@ -13,6 +13,4 @@ public class TeacherLessonListDto
 
     public string ClassroomId { get; set; } = null!;
     public string ClassroomName { get; set; } = null!;
-
-    public bool IsActive { get; set; }
 }

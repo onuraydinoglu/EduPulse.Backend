@@ -77,4 +77,17 @@ public class TeacherLessonsController : ControllerBase
 
         return StatusCode(result.StatusCode, result);
     }
+
+
+    [HttpDelete("selected-lesson/{id}")]
+    [Authorize(Roles = "schooladmin")]
+    public async Task<IActionResult> DeleteSelectedLessonAssignments(string id)
+    {
+        var result = await _teacherLessonService.DeleteSelectedLessonAssignmentsAsync(
+            id,
+            SchoolId
+        );
+
+        return StatusCode(result.StatusCode, result);
+    }
 }

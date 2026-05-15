@@ -300,6 +300,36 @@ public class TeacherLessonService : ITeacherLessonService
         );
     }
 
+    public async Task<Result<string>> DeleteSelectedLessonAssignmentsAsync(string id, string? schoolId)
+    {
+        if (string.IsNullOrWhiteSpace(schoolId))
+            return Result<string>.Failure("Okul bilgisi bulunamadı.", 400);
+
+        if (string.IsNullOrWhiteSpace(id))
+            return Result<string>.Failure("Silinecek kayıt bilgisi zorunludur.", 400);
+
+        var selectedTeacherLesson = await _teacherLessonRepository.GetByIdAsync(id);
+
+        if (selectedTeacherLesson is null)
+            return Result<string>.Failure("Kayıt bulunamadı.", 404);
+
+        if (selectedTeacherLesson.SchoolId != schoolId)
+            return Result<string>.Failure("Bu kaydı silme yetkiniz yok.", 403);
+
+        var deletedCount = await _teacherLessonRepository.DeleteByTeacherAndLessonAsync(
+            selectedTeacherLesson.SchoolId,
+            selectedTeacherLesson.TeacherId,
+            selectedTeacherLesson.LessonId
+        );
+
+        if (deletedCount == 0)
+            return Result<string>.Failure("Silinecek ders ataması bulunamadı.", 404);
+
+        var message = $"{deletedCount} ders ataması başarıyla silindi.";
+
+        return Result<string>.Success(message, message, 200);
+    }
+
     private async Task<TeacherLessonListDto> MapToDtoAsync(TeacherLesson teacherLesson)
     {
         var teacher = await _teacherRepository.GetByIdAsync(teacherLesson.TeacherId);

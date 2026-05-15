@@ -28,4 +28,8 @@ public interface ITeacherLessonRepository
     Task UpdateAsync(TeacherLesson teacherLesson);
 
     Task DeleteAsync(string id);
+    Task<long> DeleteByTeacherAndLessonAsync(
+    string schoolId,
+    string teacherId,
+    string lessonId);
 }

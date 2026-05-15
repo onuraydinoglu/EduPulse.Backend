@@ -94,4 +94,18 @@ public class TeacherLessonRepository : ITeacherLessonRepository
     {
         await _teacherLessons.DeleteOneAsync(x => x.Id == id);
     }
+
+    public async Task<long> DeleteByTeacherAndLessonAsync(
+    string schoolId,
+    string teacherId,
+    string lessonId)
+    {
+        var result = await _teacherLessons.DeleteManyAsync(x =>
+            x.SchoolId == schoolId &&
+            x.TeacherId == teacherId &&
+            x.LessonId == lessonId
+        );
+
+        return result.DeletedCount;
+    }
 }

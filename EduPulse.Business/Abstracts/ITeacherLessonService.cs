@@ -21,4 +21,6 @@ public interface ITeacherLessonService
     Task<Result<string>> UpdateAsync(UpdateTeacherLessonDto dto, string? schoolId);
 
     Task<Result<string>> DeleteAsync(string id);
+
+    Task<Result<string>> DeleteSelectedLessonAssignmentsAsync(string id, string? schoolId);
 }

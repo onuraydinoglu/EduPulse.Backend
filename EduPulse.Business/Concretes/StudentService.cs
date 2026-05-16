@@ -42,12 +42,15 @@ public class StudentService : IStudentService
             return Result<List<StudentListDto>>.Failure("Okul bilgisi bulunamadı.", 400);
 
         var students = await _studentRepository.GetBySchoolIdAsync(currentSchoolId);
-        var result = new List<StudentListDto>();
+
+        var result = new List<(StudentListDto Dto, int Grade, string Section)>();
 
         foreach (var student in students)
         {
             var user = await _userRepository.GetByIdAsync(student.UserId);
-            if (user is null) continue;
+
+            if (user is null)
+                continue;
 
             var classroom = await _classroomRepository.GetByIdAsync(student.ClassroomId);
 
@@ -58,10 +61,22 @@ public class StudentService : IStudentService
                 dto.ClassroomName = $"{classroom.Grade}/{classroom.Section}";
             }
 
-            result.Add(dto);
+            result.Add((
+                dto,
+                classroom?.Grade ?? int.MaxValue,
+                classroom?.Section ?? string.Empty
+            ));
         }
 
-        return Result<List<StudentListDto>>.Success(result, "Öğrenciler başarıyla listelendi.");
+        var orderedResult = result
+            .OrderBy(x => x.Grade)
+            .ThenBy(x => x.Section)
+            .ThenBy(x => x.Dto.FirstName)
+            .ThenBy(x => x.Dto.LastName)
+            .Select(x => x.Dto)
+            .ToList();
+
+        return Result<List<StudentListDto>>.Success(orderedResult, "Öğrenciler başarıyla listelendi.");
     }
 
     public async Task<Result<StudentListDto>> GetByIdForCurrentUserAsync(string id, string? currentRoleName, string? currentSchoolId)

@@ -167,6 +167,11 @@ public class StudentService : IStudentService
                 SchoolId = currentSchoolId,
                 ClassroomId = dto.ClassroomId,
                 StudentNumber = dto.StudentNumber.Trim(),
+                MotherFullName = dto.MotherFullName?.Trim(),
+                FatherFullName = dto.FatherFullName?.Trim(),
+                MotherPhoneNumber = dto.MotherPhoneNumber?.Trim(),
+                FatherPhoneNumber = dto.FatherPhoneNumber?.Trim(),
+                Address = dto.Address?.Trim(),
                 IsActive = true
             };
 
@@ -240,6 +245,11 @@ public class StudentService : IStudentService
 
         student.ClassroomId = dto.ClassroomId;
         student.StudentNumber = dto.StudentNumber.Trim();
+        student.MotherFullName = dto.MotherFullName?.Trim();
+        student.FatherFullName = dto.FatherFullName?.Trim();
+        student.MotherPhoneNumber = dto.MotherPhoneNumber?.Trim();
+        student.FatherPhoneNumber = dto.FatherPhoneNumber?.Trim();
+        student.Address = dto.Address?.Trim();
         student.IsActive = dto.IsActive;
 
         await _userRepository.UpdateAsync(user);
@@ -300,6 +310,11 @@ public class StudentService : IStudentService
             LastName = user.LastName,
             Email = user.Email,
             PhoneNumber = user.PhoneNumber,
+            MotherFullName = student.MotherFullName,
+            FatherFullName = student.FatherFullName,
+            MotherPhoneNumber = student.MotherPhoneNumber,
+            FatherPhoneNumber = student.FatherPhoneNumber,
+            Address = student.Address,
             IsActive = student.IsActive && user.IsActive
         };
     }

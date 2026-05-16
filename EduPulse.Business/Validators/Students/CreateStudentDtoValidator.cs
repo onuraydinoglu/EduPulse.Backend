@@ -26,5 +26,13 @@ public class CreateStudentDtoValidator : AbstractValidator<CreateStudentDto>
 
         RuleFor(x => x.StudentNumber)
             .NotEmpty().WithMessage("Öğrenci numarası boş olamaz.");
+
+        RuleFor(x => x.MotherPhoneNumber)
+            .Matches(@"^0\d{10}$").WithMessage("Anne telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.")
+            .When(x => !string.IsNullOrWhiteSpace(x.MotherPhoneNumber));
+
+        RuleFor(x => x.FatherPhoneNumber)
+            .Matches(@"^0\d{10}$").WithMessage("Baba telefon numarası 0 ile başlamalı ve 11 haneli olmalıdır.")
+            .When(x => !string.IsNullOrWhiteSpace(x.FatherPhoneNumber));
     }
 }

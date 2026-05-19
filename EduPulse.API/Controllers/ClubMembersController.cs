@@ -1,6 +1,5 @@
 ﻿using EduPulse.Business.Abstracts;
 using EduPulse.DTOs.ClubMembers;
-using EduPulse.Entities.Teachers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -20,10 +19,9 @@ public class ClubMembersController : ControllerBase
     }
 
     private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
-
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
-
     private string? TeacherId => User.FindFirst("teacherId")?.Value;
+    private string? UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
     [HttpGet]
     [Authorize(Roles = "schooladmin,teacher")]
@@ -59,11 +57,30 @@ public class ClubMembersController : ControllerBase
         return StatusCode(result.StatusCode, result);
     }
 
+    [HttpGet("me")]
+    [Authorize(Roles = "student")]
+    public async Task<IActionResult> GetMyMemberships()
+    {
+        var result = await _clubMemberService.GetMyMembershipsAsync(
+            RoleName,
+            SchoolId,
+            UserId
+        );
+
+        return StatusCode(result.StatusCode, result);
+    }
+
     [HttpPost]
     [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> Create(CreateClubMemberDto dto)
     {
-        var result = await _clubMemberService.CreateAsync(dto, RoleName, SchoolId,TeacherId);
+        var result = await _clubMemberService.CreateAsync(
+            dto,
+            RoleName,
+            SchoolId,
+            TeacherId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -71,7 +88,13 @@ public class ClubMembersController : ControllerBase
     [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> Delete(string id)
     {
-        var result = await _clubMemberService.DeleteAsync(id, RoleName, SchoolId, TeacherId);
+        var result = await _clubMemberService.DeleteAsync(
+            id,
+            RoleName,
+            SchoolId,
+            TeacherId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 }

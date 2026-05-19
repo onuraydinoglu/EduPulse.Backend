@@ -172,11 +172,11 @@ public class StudentGradesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "teacher")]
+    [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> Create(CreateStudentGradeDto dto)
     {
         var schoolId = GetSchoolId();
-        var teacherId = GetTeacherId();
+        var role = GetRole();
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
@@ -187,17 +187,23 @@ public class StudentGradesController : ControllerBase
             });
         }
 
-        if (string.IsNullOrWhiteSpace(teacherId))
-        {
-            return Unauthorized(new
-            {
-                StatusCode = 401,
-                Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
-            });
-        }
-
         dto.SchoolId = schoolId;
-        dto.TeacherId = teacherId;
+
+        if (role == "teacher")
+        {
+            var teacherId = GetTeacherId();
+
+            if (string.IsNullOrWhiteSpace(teacherId))
+            {
+                return Unauthorized(new
+                {
+                    StatusCode = 401,
+                    Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
+                });
+            }
+
+            dto.TeacherId = teacherId;
+        }
 
         var result = await _studentGradeService.CreateAsync(dto);
 
@@ -205,11 +211,11 @@ public class StudentGradesController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize(Roles = "teacher")]
+    [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> Update(UpdateStudentGradeDto dto)
     {
         var schoolId = GetSchoolId();
-        var teacherId = GetTeacherId();
+        var role = GetRole();
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
@@ -217,15 +223,6 @@ public class StudentGradesController : ControllerBase
             {
                 StatusCode = 401,
                 Message = "Okul bilgisi token içinde bulunamadı."
-            });
-        }
-
-        if (string.IsNullOrWhiteSpace(teacherId))
-        {
-            return Unauthorized(new
-            {
-                StatusCode = 401,
-                Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
             });
         }
 
@@ -236,13 +233,32 @@ public class StudentGradesController : ControllerBase
             return Forbid();
         }
 
-        if (existingGrade.Data.TeacherId != teacherId)
-        {
-            return Forbid();
-        }
-
         dto.SchoolId = schoolId;
-        dto.TeacherId = teacherId;
+
+        if (role == "teacher")
+        {
+            var teacherId = GetTeacherId();
+
+            if (string.IsNullOrWhiteSpace(teacherId))
+            {
+                return Unauthorized(new
+                {
+                    StatusCode = 401,
+                    Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
+                });
+            }
+
+            if (existingGrade.Data.TeacherId != teacherId)
+            {
+                return Forbid();
+            }
+
+            dto.TeacherId = teacherId;
+        }
+        else if (role == "schooladmin" && string.IsNullOrWhiteSpace(dto.TeacherId))
+        {
+            dto.TeacherId = existingGrade.Data.TeacherId;
+        }
 
         var result = await _studentGradeService.UpdateAsync(dto);
 
@@ -250,11 +266,11 @@ public class StudentGradesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    [Authorize(Roles = "teacher")]
+    [Authorize(Roles = "schooladmin,teacher")]
     public async Task<IActionResult> Delete(string id)
     {
         var schoolId = GetSchoolId();
-        var teacherId = GetTeacherId();
+        var role = GetRole();
 
         if (string.IsNullOrWhiteSpace(schoolId))
         {
@@ -265,15 +281,6 @@ public class StudentGradesController : ControllerBase
             });
         }
 
-        if (string.IsNullOrWhiteSpace(teacherId))
-        {
-            return Unauthorized(new
-            {
-                StatusCode = 401,
-                Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
-            });
-        }
-
         var grade = await _studentGradeService.GetByIdAsync(id);
 
         if (grade.Data == null || grade.Data.SchoolId != schoolId)
@@ -281,9 +288,23 @@ public class StudentGradesController : ControllerBase
             return Forbid();
         }
 
-        if (grade.Data.TeacherId != teacherId)
+        if (role == "teacher")
         {
-            return Forbid();
+            var teacherId = GetTeacherId();
+
+            if (string.IsNullOrWhiteSpace(teacherId))
+            {
+                return Unauthorized(new
+                {
+                    StatusCode = 401,
+                    Message = "Öğretmen bilgisi token içinde bulunamadı. Lütfen tekrar giriş yapın."
+                });
+            }
+
+            if (grade.Data.TeacherId != teacherId)
+            {
+                return Forbid();
+            }
         }
 
         var result = await _studentGradeService.DeleteAsync(id);

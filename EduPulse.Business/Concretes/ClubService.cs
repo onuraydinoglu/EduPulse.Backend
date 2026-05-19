@@ -39,7 +39,7 @@ public class ClubService : IClubService
 
     public async Task<Result<List<ClubListDto>>> GetAllForCurrentUserAsync(string? roleName, string? schoolId)
     {
-        if (roleName != "schooladmin" && roleName != "teacher")
+        if (roleName != "schooladmin" && roleName != "teacher" && roleName != "student")
             return Result<List<ClubListDto>>.Failure("Kulüpleri listeleme yetkiniz yok.", 403);
 
         if (string.IsNullOrWhiteSpace(schoolId))
@@ -56,7 +56,7 @@ public class ClubService : IClubService
 
     public async Task<Result<ClubListDto>> GetByIdForCurrentUserAsync(string id, string? roleName, string? schoolId)
     {
-        if (roleName != "schooladmin" && roleName != "teacher")
+        if (roleName != "schooladmin" && roleName != "teacher" && roleName != "student")
             return Result<ClubListDto>.Failure("Kulüp görüntüleme yetkiniz yok.", 403);
 
         if (string.IsNullOrWhiteSpace(schoolId))

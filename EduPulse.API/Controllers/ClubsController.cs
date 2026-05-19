@@ -22,7 +22,7 @@ public class ClubsController : ControllerBase
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
 
     [HttpGet]
-    [Authorize(Roles = "schooladmin,teacher")]
+    [Authorize(Roles = "schooladmin,teacher,student")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _clubService.GetAllForCurrentUserAsync(RoleName, SchoolId);
@@ -30,7 +30,7 @@ public class ClubsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "schooladmin,teacher")]
+    [Authorize(Roles = "schooladmin,teacher,student")]
     public async Task<IActionResult> GetById(string id)
     {
         var result = await _clubService.GetByIdForCurrentUserAsync(id, RoleName, SchoolId);

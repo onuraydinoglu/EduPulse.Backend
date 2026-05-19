@@ -22,7 +22,7 @@ public class EventsController : ControllerBase
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
 
     [HttpGet]
-    [Authorize(Roles = "schooladmin,officer,teacher")]
+    [Authorize(Roles = "schooladmin,officer,teacher,student")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _eventService.GetAllForCurrentUserAsync(RoleName, SchoolId);
@@ -30,7 +30,7 @@ public class EventsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "schooladmin,officer,teacher")]
+    [Authorize(Roles = "schooladmin,officer,teacher,student")]
     public async Task<IActionResult> GetById(string id)
     {
         var result = await _eventService.GetByIdForCurrentUserAsync(id, RoleName, SchoolId);

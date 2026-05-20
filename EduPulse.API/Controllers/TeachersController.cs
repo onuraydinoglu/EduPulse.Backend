@@ -22,7 +22,7 @@ public class TeachersController : ControllerBase
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
 
     [HttpGet]
-    [Authorize(Roles = "schooladmin,teacher")]
+    [Authorize(Roles = "schooladmin,teacher,officer,student")]
     public async Task<IActionResult> GetAll()
     {
         var result = await _teacherService.GetAllForCurrentUserAsync(RoleName, SchoolId);
@@ -30,7 +30,7 @@ public class TeachersController : ControllerBase
     }
 
     [HttpGet("active")]
-    [Authorize(Roles = "schooladmin,teacher")]
+    [Authorize(Roles = "schooladmin,teacher,officer,student")]
     public async Task<IActionResult> GetActive()
     {
         if (string.IsNullOrWhiteSpace(SchoolId))
@@ -43,7 +43,7 @@ public class TeachersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "schooladmin,teacher")]
+    [Authorize(Roles = "schooladmin,teacher,officer,student")]
     public async Task<IActionResult> GetById(string id)
     {
         var result = await _teacherService.GetByIdForCurrentUserAsync(id, RoleName, SchoolId);

@@ -74,6 +74,68 @@ public class EventMemberService : IEventMemberService
         return Result<List<EventMemberListDto>>.Success(dtoList, "Öğrencinin etkinlik kayıtları listelendi.");
     }
 
+    public async Task<Result<List<EventMemberListDto>>> GetMyEventsForCurrentStudentAsync(
+    string? userId,
+    string? roleName,
+    string? schoolId
+)
+    {
+        if (roleName != "student")
+        {
+            return Result<List<EventMemberListDto>>.Failure(
+                "Bu alan sadece öğrenciler için kullanılabilir.",
+                403
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Result<List<EventMemberListDto>>.Failure(
+                "Kullanıcı bilgisi bulunamadı.",
+                401
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(schoolId))
+        {
+            return Result<List<EventMemberListDto>>.Failure(
+                "Okul bilgisi bulunamadı.",
+                400
+            );
+        }
+
+        var student = await _studentRepository.GetByUserIdAsync(userId);
+
+        if (student is null || !student.IsActive)
+        {
+            return Result<List<EventMemberListDto>>.Failure(
+                "Öğrenci profili bulunamadı.",
+                404
+            );
+        }
+
+        if (student.SchoolId != schoolId)
+        {
+            return Result<List<EventMemberListDto>>.Failure(
+                "Bu öğrencinin etkinlik bilgilerine erişim yetkiniz yok.",
+                403
+            );
+        }
+
+        var members = await _eventMemberRepository.GetByStudentIdAsync(student.Id);
+
+        var activeMembers = members
+            .Where(x => x.IsActive)
+            .ToList();
+
+        var dtoList = await MapToDtoListAsync(activeMembers);
+
+        return Result<List<EventMemberListDto>>.Success(
+            dtoList,
+            "Katıldığınız etkinlikler listelendi."
+        );
+    }
+
     public async Task<Result> CreateAsync(CreateEventMemberDto dto, string? roleName, string? schoolId)
     {
         if (roleName != "schooladmin" && roleName != "officer")

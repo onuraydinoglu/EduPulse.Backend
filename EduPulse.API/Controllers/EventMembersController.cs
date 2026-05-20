@@ -8,7 +8,7 @@ namespace EduPulse.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "schooladmin,teacher,officer")]
+[Authorize(Roles = "schooladmin,teacher,officer,student")]
 public class EventMembersController : ControllerBase
 {
     private readonly IEventMemberService _eventMemberService;
@@ -20,25 +20,56 @@ public class EventMembersController : ControllerBase
 
     private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
+    private string? UserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
     [HttpGet]
+    [Authorize(Roles = "schooladmin,teacher,officer")]
     public async Task<IActionResult> GetAll()
     {
-        var result = await _eventMemberService.GetAllForCurrentUserAsync(RoleName, SchoolId);
+        var result = await _eventMemberService.GetAllForCurrentUserAsync(
+            RoleName,
+            SchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("event/{eventId}")]
+    [Authorize(Roles = "schooladmin,teacher,officer")]
     public async Task<IActionResult> GetByEventId(string eventId)
     {
-        var result = await _eventMemberService.GetByEventIdForCurrentUserAsync(eventId, RoleName, SchoolId);
+        var result = await _eventMemberService.GetByEventIdForCurrentUserAsync(
+            eventId,
+            RoleName,
+            SchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
     [HttpGet("student/{studentId}")]
+    [Authorize(Roles = "schooladmin,teacher,officer")]
     public async Task<IActionResult> GetByStudentId(string studentId)
     {
-        var result = await _eventMemberService.GetByStudentIdForCurrentUserAsync(studentId, RoleName, SchoolId);
+        var result = await _eventMemberService.GetByStudentIdForCurrentUserAsync(
+            studentId,
+            RoleName,
+            SchoolId
+        );
+
+        return StatusCode(result.StatusCode, result);
+    }
+
+    [HttpGet("my-events")]
+    [Authorize(Roles = "student")]
+    public async Task<IActionResult> GetMyEvents()
+    {
+        var result = await _eventMemberService.GetMyEventsForCurrentStudentAsync(
+            UserId,
+            RoleName,
+            SchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -46,7 +77,12 @@ public class EventMembersController : ControllerBase
     [Authorize(Roles = "schooladmin,officer")]
     public async Task<IActionResult> Create(CreateEventMemberDto dto)
     {
-        var result = await _eventMemberService.CreateAsync(dto, RoleName, SchoolId);
+        var result = await _eventMemberService.CreateAsync(
+            dto,
+            RoleName,
+            SchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -54,7 +90,12 @@ public class EventMembersController : ControllerBase
     [Authorize(Roles = "schooladmin,officer")]
     public async Task<IActionResult> UpdatePayment(UpdateEventMemberPaymentDto dto)
     {
-        var result = await _eventMemberService.UpdatePaymentAsync(dto, RoleName, SchoolId);
+        var result = await _eventMemberService.UpdatePaymentAsync(
+            dto,
+            RoleName,
+            SchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 
@@ -62,7 +103,12 @@ public class EventMembersController : ControllerBase
     [Authorize(Roles = "schooladmin,officer")]
     public async Task<IActionResult> Delete(string id)
     {
-        var result = await _eventMemberService.DeleteAsync(id, RoleName, SchoolId);
+        var result = await _eventMemberService.DeleteAsync(
+            id,
+            RoleName,
+            SchoolId
+        );
+
         return StatusCode(result.StatusCode, result);
     }
 }

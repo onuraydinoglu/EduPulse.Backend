@@ -76,12 +76,24 @@ public class StudentGradeService : IStudentGradeService
             return Result<List<StudentGradeListDto>>.Failure("Öğrenci bulunamadı.", 404);
 
         var grades = await _studentGradeRepository.GetByStudentIdAsync(studentId);
-        var result = grades.Select(MapToListDto).ToList();
 
-        return Result<List<StudentGradeListDto>>.Success(
-            result,
-            "Öğrenciye ait notlar başarıyla listelendi."
-        );
+        var result = new List<StudentGradeListDto>();
+
+        foreach (var grade in grades)
+        {
+            var dto = MapToListDto(grade);
+
+            var lesson = await _lessonRepository.GetByIdAsync(grade.LessonId);
+
+            if (lesson is not null)
+            {
+                dto.LessonName = lesson.Name;
+            }
+
+            result.Add(dto);
+        }
+
+        return Result<List<StudentGradeListDto>>.Success(result, "Öğrenciye ait notlar başarıyla listelendi.");
     }
 
     public async Task<Result<List<StudentGradeListDto>>> GetByLessonIdAsync(string lessonId)

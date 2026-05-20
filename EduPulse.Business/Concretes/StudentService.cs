@@ -106,6 +106,42 @@ public class StudentService : IStudentService
         return Result<StudentListDto>.Success(dto, "Öğrenci başarıyla getirildi.");
     }
 
+    public async Task<Result<StudentListDto>> GetByUserIdForCurrentUserAsync(
+    string userId,
+    string? currentRoleName,
+    string? currentSchoolId)
+    {
+        if (currentRoleName != "student")
+            return Result<StudentListDto>.Failure("Sadece öğrenci kendi notlarını görüntüleyebilir.", 403);
+
+        if (string.IsNullOrWhiteSpace(currentSchoolId))
+            return Result<StudentListDto>.Failure("Okul bilgisi bulunamadı.", 400);
+
+        var student = await _studentRepository.GetByUserIdAsync(userId);
+
+        if (student is null)
+            return Result<StudentListDto>.Failure("Öğrenci bulunamadı.", 404);
+
+        if (student.SchoolId != currentSchoolId)
+            return Result<StudentListDto>.Failure("Bu öğrenciye erişim yetkiniz yok.", 403);
+
+        var user = await _userRepository.GetByIdAsync(student.UserId);
+
+        if (user is null)
+            return Result<StudentListDto>.Failure("Öğrenciye bağlı kullanıcı bulunamadı.", 404);
+
+        var classroom = await _classroomRepository.GetByIdAsync(student.ClassroomId);
+
+        var dto = MapToListDto(student, user);
+
+        if (classroom is not null)
+        {
+            dto.ClassroomName = $"{classroom.Grade}/{classroom.Section}";
+        }
+
+        return Result<StudentListDto>.Success(dto, "Öğrenci başarıyla getirildi.");
+    }
+
     public async Task<Result> CreateForCurrentUserAsync(CreateStudentDto dto, string? currentRoleName, string? currentSchoolId)
     {
         if (currentRoleName != "schooladmin")

@@ -7,6 +7,7 @@ public class StudentGradeListDto
     public string TeacherId { get; set; } = null!;
     public string StudentId { get; set; } = null!;
     public string LessonId { get; set; } = null!;
+    public string? LessonName { get; set; }
 
     public double? Exam1 { get; set; }
     public double? Exam2 { get; set; }

@@ -12,10 +12,12 @@ namespace EduPulse.API.Controllers;
 public class StudentGradesController : ControllerBase
 {
     private readonly IStudentGradeService _studentGradeService;
+    private readonly IStudentService _studentService;
 
-    public StudentGradesController(IStudentGradeService studentGradeService)
+    public StudentGradesController(IStudentGradeService studentGradeService, IStudentService studentService)
     {
         _studentGradeService = studentGradeService;
+        _studentService = studentService;
     }
 
     private string? GetSchoolId()
@@ -32,6 +34,58 @@ public class StudentGradesController : ControllerBase
     {
         return User.FindFirst(ClaimTypes.Role)?.Value?.ToLowerInvariant();
     }
+
+    private string? GetUserId()
+    {
+        return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+
+
+    [HttpGet("my")]
+    [Authorize(Roles = "student")]
+    public async Task<IActionResult> GetMyGrades()
+    {
+        var userId = GetUserId();
+        var schoolId = GetSchoolId();
+        var role = GetRole();
+
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Kullanıcı bilgisi token içinde bulunamadı."
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(schoolId))
+        {
+            return Unauthorized(new
+            {
+                StatusCode = 401,
+                Message = "Okul bilgisi token içinde bulunamadı."
+            });
+        }
+
+        var studentResult = await _studentService.GetByUserIdForCurrentUserAsync(
+            userId,
+            role,
+            schoolId);
+
+        if (!studentResult.IsSuccess || studentResult.Data is null)
+        {
+            return StatusCode(studentResult.StatusCode, studentResult);
+        }
+
+        var result = await _studentGradeService.GetByStudentIdAsync(studentResult.Data.Id);
+
+        result.Data = result.Data?
+            .Where(x => x.SchoolId == schoolId && x.StudentId == studentResult.Data.Id)
+            .ToList() ?? new List<StudentGradeListDto>();
+
+        return StatusCode(result.StatusCode, result);
+    }
+
 
     [HttpGet]
     [Authorize(Roles = "schooladmin,teacher")]

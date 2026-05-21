@@ -1,6 +1,7 @@
 ﻿using EduPulse.Business.Abstracts;
 using EduPulse.DTOs.Common;
 using EduPulse.DTOs.Messages;
+using EduPulse.Entities.Classrooms;
 using EduPulse.Entities.Messages;
 using EduPulse.Entities.Users;
 using EduPulse.Repository.Abstracts;
@@ -11,28 +12,42 @@ public class MessageService : IMessageService
 {
     private readonly IMessageRepository _messageRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IClassroomRepository _classroomRepository;
+    private readonly IStudentRepository _studentRepository;
+    private readonly ITeacherRepository _teacherRepository;
+    private readonly ITeacherLessonRepository _teacherLessonRepository;
 
     private static readonly string[] AllowedMessageRoles =
     {
-        "schooladmin",
-        "teacher",
-        "officer"
-    };
+    "schooladmin",
+    "teacher",
+    "officer"
+};
+
+    private const string ClassroomTargetPrefix = "classroom:";
 
     public MessageService(
-        IMessageRepository messageRepository,
-        IUserRepository userRepository
-    )
+     IMessageRepository messageRepository,
+     IUserRepository userRepository,
+     IClassroomRepository classroomRepository,
+     IStudentRepository studentRepository,
+     ITeacherRepository teacherRepository,
+     ITeacherLessonRepository teacherLessonRepository
+ )
     {
         _messageRepository = messageRepository;
         _userRepository = userRepository;
+        _classroomRepository = classroomRepository;
+        _studentRepository = studentRepository;
+        _teacherRepository = teacherRepository;
+        _teacherLessonRepository = teacherLessonRepository;
     }
 
     public async Task<Result<List<MessageUserListDto>>> GetMessageUsersAsync(
-        string? currentUserId,
-        string? currentRoleName,
-        string? currentSchoolId
-    )
+    string? currentUserId,
+    string? currentRoleName,
+    string? currentSchoolId
+)
     {
         if (string.IsNullOrWhiteSpace(currentUserId))
         {
@@ -77,6 +92,14 @@ public class MessageService : IMessageService
                 Email = x.Email
             })
             .ToList();
+
+        var classroomTargets = await GetClassroomMessageTargetsAsync(
+            currentUserId,
+            currentRoleName!,
+            currentSchoolId
+        );
+
+        result.AddRange(classroomTargets);
 
         return Result<List<MessageUserListDto>>.Success(
             result,
@@ -189,12 +212,13 @@ public class MessageService : IMessageService
     }
 
     public async Task<Result> SendAsync(
-        CreateMessageDto dto,
-        string? currentUserId,
-        string? currentSchoolId
-    )
+    CreateMessageDto dto,
+    string? currentUserId,
+    string? currentSchoolId
+)
     {
         var validation = ValidateUserAndSchool(currentUserId, currentSchoolId);
+
         if (validation is not null)
         {
             return validation;
@@ -215,7 +239,21 @@ public class MessageService : IMessageService
             return Result.Failure("Mesaj içeriği boş olamaz.", 400);
         }
 
-        var receiver = await _userRepository.GetByIdAsync(dto.ReceiverUserId);
+        var receiverUserId = dto.ReceiverUserId.Trim();
+
+        if (IsClassroomTarget(receiverUserId))
+        {
+            return await SendToClassroomAsync(
+                receiverUserId,
+                dto.Title.Trim(),
+                dto.Content.Trim(),
+                currentUserId!,
+                currentSchoolId!
+            );
+        }
+
+        var receiver = await _userRepository.GetByIdAsync(receiverUserId);
+
         if (receiver is null)
         {
             return Result.Failure("Alıcı kullanıcı bulunamadı.", 404);
@@ -240,7 +278,7 @@ public class MessageService : IMessageService
         {
             SchoolId = currentSchoolId!,
             SenderUserId = currentUserId!,
-            ReceiverUserId = dto.ReceiverUserId,
+            ReceiverUserId = receiverUserId,
             Title = dto.Title.Trim(),
             Content = dto.Content.Trim(),
             IsRead = false,
@@ -358,6 +396,188 @@ public class MessageService : IMessageService
         }
 
         return result;
+    }
+
+    private async Task<List<MessageUserListDto>> GetClassroomMessageTargetsAsync(
+    string currentUserId,
+    string currentRoleName,
+    string currentSchoolId
+)
+    {
+        var roleName = currentRoleName.ToLower();
+
+        if (roleName == "schooladmin")
+        {
+            var classrooms = await _classroomRepository.GetBySchoolIdAsync(currentSchoolId);
+
+            return classrooms
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.Grade)
+                .ThenBy(x => x.Section)
+                .Select(MapClassroomToMessageTarget)
+                .ToList();
+        }
+
+        if (roleName == "teacher")
+        {
+            var teacher = await _teacherRepository.GetByUserIdAsync(currentUserId);
+
+            if (teacher is null || !teacher.IsActive)
+            {
+                return new List<MessageUserListDto>();
+            }
+
+            var teacherLessons = await _teacherLessonRepository.GetByTeacherIdAsync(teacher.Id);
+            var teacherLessonClassroomIds = teacherLessons
+                .Where(x => x.SchoolId == currentSchoolId && x.IsActive)
+                .Select(x => x.ClassroomId)
+                .ToHashSet();
+
+            var schoolClassrooms = await _classroomRepository.GetBySchoolIdAsync(currentSchoolId);
+
+            return schoolClassrooms
+                .Where(x =>
+                    x.IsActive &&
+                    (
+                        teacherLessonClassroomIds.Contains(x.Id) ||
+                        x.TeacherId == teacher.Id
+                    )
+                )
+                .OrderBy(x => x.Grade)
+                .ThenBy(x => x.Section)
+                .Select(MapClassroomToMessageTarget)
+                .ToList();
+        }
+
+        return new List<MessageUserListDto>();
+    }
+
+    private static MessageUserListDto MapClassroomToMessageTarget(Classroom classroom)
+    {
+        return new MessageUserListDto
+        {
+            UserId = $"{ClassroomTargetPrefix}{classroom.Id}",
+            FullName = $"{classroom.Grade}-{classroom.Section}",
+            RoleName = "Sınıf",
+            Email = ""
+        };
+    }
+
+    private async Task<Result> SendToClassroomAsync(
+        string classroomTargetId,
+        string title,
+        string content,
+        string currentUserId,
+        string currentSchoolId
+    )
+    {
+        var classroomId = GetClassroomIdFromTarget(classroomTargetId);
+
+        if (string.IsNullOrWhiteSpace(classroomId))
+        {
+            return Result.Failure("Sınıf bilgisi bulunamadı.", 400);
+        }
+
+        var classroom = await _classroomRepository.GetByIdAsync(classroomId);
+
+        if (classroom is null || classroom.SchoolId != currentSchoolId || !classroom.IsActive)
+        {
+            return Result.Failure("Mesaj gönderilecek sınıf bulunamadı.", 404);
+        }
+
+        var sender = await _userRepository.GetByIdAsync(currentUserId);
+
+        if (sender is null || !sender.IsActive)
+        {
+            return Result.Failure("Gönderen kullanıcı bulunamadı.", 404);
+        }
+
+        var senderRoleName = sender.RoleName.ToLower();
+
+        if (senderRoleName == "teacher")
+        {
+            var teacher = await _teacherRepository.GetByUserIdAsync(currentUserId);
+
+            if (teacher is null || !teacher.IsActive)
+            {
+                return Result.Failure("Öğretmen bilgisi bulunamadı.", 404);
+            }
+
+            var teacherLessons = await _teacherLessonRepository.GetByTeacherIdAsync(teacher.Id);
+
+            var teacherHasThisClassroom = teacherLessons.Any(x =>
+                x.SchoolId == currentSchoolId &&
+                x.ClassroomId == classroomId &&
+                x.IsActive
+            );
+
+            var teacherIsClassroomTeacher = classroom.TeacherId == teacher.Id;
+
+            if (!teacherHasThisClassroom && !teacherIsClassroomTeacher)
+            {
+                return Result.Failure(
+                    "Bu sınıfa toplu mesaj gönderme yetkiniz yok.",
+                    403
+                );
+            }
+        }
+        else if (senderRoleName != "schooladmin")
+        {
+            return Result.Failure(
+                "Sınıfa toplu mesaj gönderme yetkiniz yok.",
+                403
+            );
+        }
+
+        var students = await _studentRepository.GetByClassroomIdAsync(classroomId);
+
+        var activeStudents = students
+            .Where(x =>
+                x.SchoolId == currentSchoolId &&
+                x.IsActive &&
+                !string.IsNullOrWhiteSpace(x.UserId)
+            )
+            .ToList();
+
+        if (!activeStudents.Any())
+        {
+            return Result.Failure("Bu sınıfta mesaj gönderilecek aktif öğrenci bulunamadı.", 404);
+        }
+
+        foreach (var student in activeStudents)
+        {
+            var message = new Message
+            {
+                SchoolId = currentSchoolId,
+                SenderUserId = currentUserId,
+                ReceiverUserId = student.UserId,
+                Title = title,
+                Content = content,
+                IsRead = false,
+                IsDeletedBySender = false,
+                IsDeletedByReceiver = false
+            };
+
+            await _messageRepository.CreateAsync(message);
+        }
+
+        return Result.Success(
+            $"{activeStudents.Count} öğrenciye mesaj başarıyla gönderildi.",
+            201
+        );
+    }
+
+    private static bool IsClassroomTarget(string receiverUserId)
+    {
+        return receiverUserId.StartsWith(
+            ClassroomTargetPrefix,
+            StringComparison.OrdinalIgnoreCase
+        );
+    }
+
+    private static string GetClassroomIdFromTarget(string receiverUserId)
+    {
+        return receiverUserId[ClassroomTargetPrefix.Length..];
     }
 
     private static Result? ValidateUserAndSchool(string? currentUserId, string? currentSchoolId)

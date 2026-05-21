@@ -8,7 +8,7 @@ namespace EduPulse.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "schooladmin,teacher,officer")]
+[Authorize(Roles = "schooladmin,teacher,officer,student")]
 public class MessagesController : ControllerBase
 {
     private readonly IMessageService _messageService;
@@ -19,12 +19,11 @@ public class MessagesController : ControllerBase
     }
 
     private string? CurrentUserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
     private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
-
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
 
     [HttpGet("users")]
+    [Authorize(Roles = "schooladmin,teacher,officer")]
     public async Task<IActionResult> GetMessageUsers()
     {
         var result = await _messageService.GetMessageUsersAsync(
@@ -71,6 +70,7 @@ public class MessagesController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "schooladmin,teacher,officer")]
     public async Task<IActionResult> Send(CreateMessageDto dto)
     {
         var result = await _messageService.SendAsync(

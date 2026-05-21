@@ -66,6 +66,16 @@ public class MessageRepository : IMessageRepository
             .ToListAsync();
     }
 
+    public async Task<List<Message>> GetByGroupIdAsync(string schoolId, string groupId)
+    {
+        return await _messages
+            .Find(x =>
+                x.SchoolId == schoolId &&
+                x.GroupId == groupId
+            )
+            .ToListAsync();
+    }
+
     public async Task<Message?> GetByIdAsync(string id)
     {
         return await _messages

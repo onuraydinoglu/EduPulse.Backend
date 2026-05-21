@@ -19,7 +19,9 @@ public class MessagesController : ControllerBase
     }
 
     private string? CurrentUserId => User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
     private string? RoleName => User.FindFirst(ClaimTypes.Role)?.Value;
+
     private string? SchoolId => User.FindFirst("schoolId")?.Value;
 
     [HttpGet("users")]
@@ -47,6 +49,7 @@ public class MessagesController : ControllerBase
     }
 
     [HttpGet("sent")]
+    [Authorize(Roles = "schooladmin,teacher,officer")]
     public async Task<IActionResult> GetSent()
     {
         var result = await _messageService.GetSentAsync(

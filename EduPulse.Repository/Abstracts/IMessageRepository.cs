@@ -14,6 +14,8 @@ public interface IMessageRepository
         string otherUserId
     );
 
+    Task<List<Message>> GetByGroupIdAsync(string schoolId, string groupId);
+
     Task<Message?> GetByIdAsync(string id);
 
     Task CreateAsync(Message message);

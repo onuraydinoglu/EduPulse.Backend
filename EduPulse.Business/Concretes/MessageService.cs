@@ -3,7 +3,6 @@ using EduPulse.DTOs.Common;
 using EduPulse.DTOs.Messages;
 using EduPulse.Entities.Classrooms;
 using EduPulse.Entities.Messages;
-using EduPulse.Entities.Users;
 using EduPulse.Repository.Abstracts;
 
 namespace EduPulse.Business.Concretes;
@@ -19,21 +18,21 @@ public class MessageService : IMessageService
 
     private static readonly string[] AllowedMessageRoles =
     {
-    "schooladmin",
-    "teacher",
-    "officer"
-};
+        "schooladmin",
+        "teacher",
+        "officer"
+    };
 
     private const string ClassroomTargetPrefix = "classroom:";
 
     public MessageService(
-     IMessageRepository messageRepository,
-     IUserRepository userRepository,
-     IClassroomRepository classroomRepository,
-     IStudentRepository studentRepository,
-     ITeacherRepository teacherRepository,
-     ITeacherLessonRepository teacherLessonRepository
- )
+        IMessageRepository messageRepository,
+        IUserRepository userRepository,
+        IClassroomRepository classroomRepository,
+        IStudentRepository studentRepository,
+        ITeacherRepository teacherRepository,
+        ITeacherLessonRepository teacherLessonRepository
+    )
     {
         _messageRepository = messageRepository;
         _userRepository = userRepository;
@@ -44,10 +43,10 @@ public class MessageService : IMessageService
     }
 
     public async Task<Result<List<MessageUserListDto>>> GetMessageUsersAsync(
-    string? currentUserId,
-    string? currentRoleName,
-    string? currentSchoolId
-)
+        string? currentUserId,
+        string? currentRoleName,
+        string? currentSchoolId
+    )
     {
         if (string.IsNullOrWhiteSpace(currentUserId))
         {
@@ -114,6 +113,7 @@ public class MessageService : IMessageService
     )
     {
         var validation = ValidateUserAndSchool(currentUserId, currentSchoolId);
+
         if (validation is not null)
         {
             return Result<List<MessageListDto>>.Failure(
@@ -142,6 +142,7 @@ public class MessageService : IMessageService
     )
     {
         var validation = ValidateUserAndSchool(currentUserId, currentSchoolId);
+
         if (validation is not null)
         {
             return Result<List<MessageListDto>>.Failure(
@@ -155,7 +156,13 @@ public class MessageService : IMessageService
             currentUserId!
         );
 
-        var result = await MapToListDtoAsync(messages);
+        var groupedMessages = messages
+            .GroupBy(x => string.IsNullOrWhiteSpace(x.GroupId) ? x.Id : x.GroupId)
+            .Select(x => x.OrderBy(message => message.CreatedDate).First())
+            .OrderByDescending(x => x.CreatedDate)
+            .ToList();
+
+        var result = await MapToListDtoAsync(groupedMessages);
 
         return Result<List<MessageListDto>>.Success(
             result,
@@ -171,6 +178,7 @@ public class MessageService : IMessageService
     )
     {
         var validation = ValidateUserAndSchool(currentUserId, currentSchoolId);
+
         if (validation is not null)
         {
             return Result<List<MessageListDto>>.Failure(
@@ -188,6 +196,7 @@ public class MessageService : IMessageService
         }
 
         var otherUser = await _userRepository.GetByIdAsync(otherUserId);
+
         if (otherUser is null || otherUser.SchoolId != currentSchoolId)
         {
             return Result<List<MessageListDto>>.Failure(
@@ -212,10 +221,10 @@ public class MessageService : IMessageService
     }
 
     public async Task<Result> SendAsync(
-    CreateMessageDto dto,
-    string? currentUserId,
-    string? currentSchoolId
-)
+        CreateMessageDto dto,
+        string? currentUserId,
+        string? currentSchoolId
+    )
     {
         var validation = ValidateUserAndSchool(currentUserId, currentSchoolId);
 
@@ -298,12 +307,14 @@ public class MessageService : IMessageService
     )
     {
         var validation = ValidateUserAndSchool(currentUserId, currentSchoolId);
+
         if (validation is not null)
         {
             return validation;
         }
 
         var message = await _messageRepository.GetByIdAsync(id);
+
         if (message is null)
         {
             return Result.Failure("Mesaj bulunamadı.", 404);
@@ -329,12 +340,14 @@ public class MessageService : IMessageService
     )
     {
         var validation = ValidateUserAndSchool(currentUserId, currentSchoolId);
+
         if (validation is not null)
         {
             return validation;
         }
 
         var message = await _messageRepository.GetByIdAsync(id);
+
         if (message is null)
         {
             return Result.Failure("Mesaj bulunamadı.", 404);
@@ -343,6 +356,29 @@ public class MessageService : IMessageService
         if (message.SchoolId != currentSchoolId)
         {
             return Result.Failure("Bu mesajı silme yetkiniz yok.", 403);
+        }
+
+        if (
+            message.SenderUserId == currentUserId &&
+            !string.IsNullOrWhiteSpace(message.GroupId)
+        )
+        {
+            var groupMessages = await _messageRepository.GetByGroupIdAsync(
+                currentSchoolId!,
+                message.GroupId
+            );
+
+            foreach (var groupMessage in groupMessages)
+            {
+                if (groupMessage.SenderUserId == currentUserId)
+                {
+                    groupMessage.IsDeletedBySender = true;
+                    groupMessage.UpdatedDate = DateTime.UtcNow;
+                    await _messageRepository.UpdateAsync(groupMessage);
+                }
+            }
+
+            return Result.Success("Mesaj başarıyla silindi.");
         }
 
         if (message.SenderUserId == currentUserId)
@@ -374,6 +410,18 @@ public class MessageService : IMessageService
             var sender = await _userRepository.GetByIdAsync(message.SenderUserId);
             var receiver = await _userRepository.GetByIdAsync(message.ReceiverUserId);
 
+            var receiverFullName = receiver is null
+                ? "Bilinmeyen Kullanıcı"
+                : $"{receiver.FirstName} {receiver.LastName}";
+
+            var receiverRoleName = receiver?.RoleName ?? "";
+
+            if (!string.IsNullOrWhiteSpace(message.ReceiverGroupName))
+            {
+                receiverFullName = message.ReceiverGroupName;
+                receiverRoleName = "Sınıf";
+            }
+
             result.Add(new MessageListDto
             {
                 Id = message.Id,
@@ -384,10 +432,10 @@ public class MessageService : IMessageService
                     : $"{sender.FirstName} {sender.LastName}",
                 SenderRoleName = sender?.RoleName ?? "",
                 ReceiverUserId = message.ReceiverUserId,
-                ReceiverFullName = receiver is null
-                    ? "Bilinmeyen Kullanıcı"
-                    : $"{receiver.FirstName} {receiver.LastName}",
-                ReceiverRoleName = receiver?.RoleName ?? "",
+                ReceiverFullName = receiverFullName,
+                ReceiverRoleName = receiverRoleName,
+                GroupId = message.GroupId,
+                ReceiverGroupName = message.ReceiverGroupName,
                 Title = message.Title,
                 Content = message.Content,
                 IsRead = message.IsRead,
@@ -399,10 +447,10 @@ public class MessageService : IMessageService
     }
 
     private async Task<List<MessageUserListDto>> GetClassroomMessageTargetsAsync(
-    string currentUserId,
-    string currentRoleName,
-    string currentSchoolId
-)
+        string currentUserId,
+        string currentRoleName,
+        string currentSchoolId
+    )
     {
         var roleName = currentRoleName.ToLower();
 
@@ -428,6 +476,7 @@ public class MessageService : IMessageService
             }
 
             var teacherLessons = await _teacherLessonRepository.GetByTeacherIdAsync(teacher.Id);
+
             var teacherLessonClassroomIds = teacherLessons
                 .Where(x => x.SchoolId == currentSchoolId && x.IsActive)
                 .Select(x => x.ClassroomId)
@@ -541,8 +590,14 @@ public class MessageService : IMessageService
 
         if (!activeStudents.Any())
         {
-            return Result.Failure("Bu sınıfta mesaj gönderilecek aktif öğrenci bulunamadı.", 404);
+            return Result.Failure(
+                "Bu sınıfta mesaj gönderilecek aktif öğrenci bulunamadı.",
+                404
+            );
         }
+
+        var groupId = Guid.NewGuid().ToString();
+        var receiverGroupName = $"{classroom.Grade}-{classroom.Section} Sınıf";
 
         foreach (var student in activeStudents)
         {
@@ -551,6 +606,8 @@ public class MessageService : IMessageService
                 SchoolId = currentSchoolId,
                 SenderUserId = currentUserId,
                 ReceiverUserId = student.UserId,
+                GroupId = groupId,
+                ReceiverGroupName = receiverGroupName,
                 Title = title,
                 Content = content,
                 IsRead = false,
@@ -562,7 +619,7 @@ public class MessageService : IMessageService
         }
 
         return Result.Success(
-            $"{activeStudents.Count} öğrenciye mesaj başarıyla gönderildi.",
+            $"{receiverGroupName} için {activeStudents.Count} öğrenciye mesaj başarıyla gönderildi.",
             201
         );
     }
@@ -580,7 +637,10 @@ public class MessageService : IMessageService
         return receiverUserId[ClassroomTargetPrefix.Length..];
     }
 
-    private static Result? ValidateUserAndSchool(string? currentUserId, string? currentSchoolId)
+    private static Result? ValidateUserAndSchool(
+        string? currentUserId,
+        string? currentSchoolId
+    )
     {
         if (string.IsNullOrWhiteSpace(currentUserId))
         {

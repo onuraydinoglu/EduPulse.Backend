@@ -10,6 +10,10 @@ public class Message : BaseEntity
 
     public string ReceiverUserId { get; set; } = null!;
 
+    public string? GroupId { get; set; }
+
+    public string? ReceiverGroupName { get; set; }
+
     public string Title { get; set; } = null!;
 
     public string Content { get; set; } = null!;

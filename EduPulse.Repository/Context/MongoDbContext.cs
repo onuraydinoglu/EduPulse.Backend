@@ -137,20 +137,18 @@ public class MongoDbContext
             Builders<Lesson>.IndexKeys
                 .Ascending(x => x.SchoolId)
                 .Ascending(x => x.NormalizedName),
-            new CreateIndexOptions<Lesson>
+            new CreateIndexOptions
             {
                 Unique = true,
-                Name = "UX_Lessons_SchoolId_NormalizedName_Active",
-                PartialFilterExpression = Builders<Lesson>.Filter.Eq(x => x.IsActive, true)
+                Name = "UX_Lessons_SchoolId_NormalizedName"
             }));
 
         Lessons.Indexes.CreateOne(new CreateIndexModel<Lesson>(
             Builders<Lesson>.IndexKeys
-                .Ascending(x => x.SchoolId)
-                .Ascending(x => x.IsActive),
+                .Ascending(x => x.SchoolId),
             new CreateIndexOptions
             {
-                Name = "IX_Lessons_SchoolId_IsActive"
+                Name = "IX_Lessons_SchoolId"
             }));
     }
 

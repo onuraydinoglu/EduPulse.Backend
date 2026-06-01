@@ -39,22 +39,13 @@ public class LessonService : ILessonService
             lessons = await _lessonRepository.GetBySchoolIdAsync(schoolId);
         }
 
-        var dtoList = lessons
-            .Select(MapToListDto)
-            .ToList();
+        var dtoList = lessons.Select(MapToListDto).ToList();
 
-        return Result<List<LessonListDto>>.Success(
-            dtoList,
-            "Dersler başarıyla listelendi.",
-            200
-        );
+        return Result<List<LessonListDto>>.Success(dtoList, "Dersler başarıyla listelendi.", 200);
     }
 
     public async Task<Result<LessonListDto>> GetByIdForCurrentUserAsync(string id, string? roleName, string? schoolId)
     {
-        if (string.IsNullOrWhiteSpace(id))
-            return Result<LessonListDto>.Failure("Ders id bilgisi zorunludur.", 400);
-
         var lesson = await _lessonRepository.GetByIdAsync(id);
 
         if (lesson is null)
@@ -63,11 +54,7 @@ public class LessonService : ILessonService
         if (roleName != "superadmin" && lesson.SchoolId != schoolId)
             return Result<LessonListDto>.Failure("Bu derse erişim yetkiniz yok.", 403);
 
-        return Result<LessonListDto>.Success(
-            MapToListDto(lesson),
-            "Ders başarıyla getirildi.",
-            200
-        );
+        return Result<LessonListDto>.Success(MapToListDto(lesson), "Ders başarıyla getirildi.", 200);
     }
 
     public async Task<Result> CreateAsync(CreateLessonDto dto, string? roleName, string? schoolId)
@@ -95,8 +82,7 @@ public class LessonService : ILessonService
         {
             SchoolId = schoolId,
             Name = dto.Name.Trim(),
-            NormalizedName = normalizedName,
-            IsActive = true
+            NormalizedName = normalizedName
         };
 
         await _lessonRepository.CreateAsync(lesson);
@@ -135,7 +121,6 @@ public class LessonService : ILessonService
 
         lesson.Name = dto.Name.Trim();
         lesson.NormalizedName = normalizedName;
-        lesson.IsActive = dto.IsActive;
 
         await _lessonRepository.UpdateAsync(lesson);
 
@@ -144,9 +129,6 @@ public class LessonService : ILessonService
 
     public async Task<Result> DeleteAsync(string id, string? roleName, string? schoolId)
     {
-        if (string.IsNullOrWhiteSpace(id))
-            return Result.Failure("Ders id bilgisi zorunludur.", 400);
-
         if (roleName != "schooladmin" && roleName != "officer")
             return Result.Failure("Ders silme yetkiniz yok.", 403);
 
@@ -163,7 +145,7 @@ public class LessonService : ILessonService
 
         await _lessonRepository.DeleteAsync(id);
 
-        return Result.Success("Ders başarıyla pasife alındı.", 200);
+        return Result.Success("Ders başarıyla silindi.", 200);
     }
 
     private static LessonListDto MapToListDto(Lesson lesson)
@@ -172,8 +154,7 @@ public class LessonService : ILessonService
         {
             Id = lesson.Id,
             SchoolId = lesson.SchoolId,
-            Name = lesson.Name,
-            IsActive = lesson.IsActive
+            Name = lesson.Name
         };
     }
 

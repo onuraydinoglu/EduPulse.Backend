@@ -17,7 +17,7 @@ public class LessonRepository : ILessonRepository
     public async Task<List<Lesson>> GetAllAsync()
     {
         return await _lessons
-            .Find(_ => true)
+            .Find(x => true)
             .SortByDescending(x => x.CreatedDate)
             .ToListAsync();
     }
@@ -37,7 +37,9 @@ public class LessonRepository : ILessonRepository
             .FirstOrDefaultAsync();
     }
 
-    public async Task<Lesson?> GetBySchoolIdAndNormalizedNameAsync(string schoolId, string normalizedName)
+    public async Task<Lesson?> GetBySchoolIdAndNormalizedNameAsync(
+        string schoolId,
+        string normalizedName)
     {
         return await _lessons
             .Find(x =>
@@ -48,6 +50,9 @@ public class LessonRepository : ILessonRepository
 
     public async Task CreateAsync(Lesson lesson)
     {
+        lesson.CreatedDate = DateTime.UtcNow;
+        lesson.UpdatedDate = null;
+
         await _lessons.InsertOneAsync(lesson);
     }
 
@@ -57,16 +62,11 @@ public class LessonRepository : ILessonRepository
 
         await _lessons.ReplaceOneAsync(
             x => x.Id == lesson.Id,
-            lesson
-        );
+            lesson);
     }
 
     public async Task DeleteAsync(string id)
     {
-        var update = Builders<Lesson>.Update
-            .Set(x => x.IsActive, false)
-            .Set(x => x.UpdatedDate, DateTime.UtcNow);
-
-        await _lessons.UpdateOneAsync(x => x.Id == id, update);
+        await _lessons.DeleteOneAsync(x => x.Id == id);
     }
 }

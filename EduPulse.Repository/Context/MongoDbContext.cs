@@ -193,15 +193,6 @@ public class MongoDbContext
                 Unique = true,
                 Name = "UX_Classrooms_SchoolId_Grade_Section"
             }));
-
-        Classrooms.Indexes.CreateOne(new CreateIndexModel<Classroom>(
-            Builders<Classroom>.IndexKeys
-                .Ascending(x => x.SchoolId)
-                .Ascending(x => x.IsActive),
-            new CreateIndexOptions
-            {
-                Name = "IX_Classrooms_SchoolId_IsActive"
-            }));
     }
 
     private void CreateStudentIndexes()

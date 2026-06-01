@@ -196,8 +196,7 @@ public class ClassroomService : IClassroomService
             SchoolId = selectedSchoolId,
             Grade = dto.Grade,
             Section = normalizedSection,
-            TeacherId = normalizedTeacherId,
-            IsActive = true
+            TeacherId = normalizedTeacherId
         };
 
         await _classroomRepository.CreateAsync(classroom);
@@ -262,7 +261,6 @@ public class ClassroomService : IClassroomService
         classroom.Grade = dto.Grade;
         classroom.Section = normalizedSection;
         classroom.TeacherId = normalizedTeacherId;
-        classroom.IsActive = dto.IsActive;
 
         await _classroomRepository.UpdateAsync(classroom);
 
@@ -345,7 +343,6 @@ public class ClassroomService : IClassroomService
             TeacherId = classroom.TeacherId,
             TeacherFullName = teacherFullName,
             StudentCount = students.Count,
-            IsActive = classroom.IsActive
         };
     }
 }

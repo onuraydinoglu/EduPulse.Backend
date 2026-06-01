@@ -8,5 +8,4 @@ public class Classroom : BaseEntity
     public int Grade { get; set; }
     public string Section { get; set; } = null!;
     public string? TeacherId { get; set; }
-    public bool IsActive { get; set; } = true;
 }

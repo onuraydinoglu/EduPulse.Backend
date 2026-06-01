@@ -459,7 +459,6 @@ public class MessageService : IMessageService
             var classrooms = await _classroomRepository.GetBySchoolIdAsync(currentSchoolId);
 
             return classrooms
-                .Where(x => x.IsActive)
                 .OrderBy(x => x.Grade)
                 .ThenBy(x => x.Section)
                 .Select(MapClassroomToMessageTarget)
@@ -486,11 +485,8 @@ public class MessageService : IMessageService
 
             return schoolClassrooms
                 .Where(x =>
-                    x.IsActive &&
-                    (
-                        teacherLessonClassroomIds.Contains(x.Id) ||
-                        x.TeacherId == teacher.Id
-                    )
+                    teacherLessonClassroomIds.Contains(x.Id) ||
+                    x.TeacherId == teacher.Id
                 )
                 .OrderBy(x => x.Grade)
                 .ThenBy(x => x.Section)
@@ -529,7 +525,7 @@ public class MessageService : IMessageService
 
         var classroom = await _classroomRepository.GetByIdAsync(classroomId);
 
-        if (classroom is null || classroom.SchoolId != currentSchoolId || !classroom.IsActive)
+        if (classroom is null || classroom.SchoolId != currentSchoolId)
         {
             return Result.Failure("Mesaj gönderilecek sınıf bulunamadı.", 404);
         }
